@@ -1,21 +1,42 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import Modal from "@/components/shared/Modal";
+import Button from "@/components/shared/Button";
 import ExclusiveBadge from "@/components/shared/ExclusiveBadge";
 import FramerUrlForm from "@/components/shared/FramerUrlForm";
 import SmartImage from "@/components/shared/SmartImage";
+import AuthFormError from "@/components/auth/AuthFormError";
+import ConversionProgress from "@/components/dashboard/dashboard/ConversionProgress";
 import CloseIcon from "@/assets/icons/close.svg";
-import { NewConversionModalProps } from "@/types/dashboard";
+import { useConversion } from "@/hooks/useConversion";
+import { AppDispatch, RootState } from "@/store/redux";
+import { conversionsActions } from "@/store/redux/conversions-slice";
+import { ConversionStatus } from "@/utils/enum";
 
-export default function NewConversionModal({ isOpen, onClose }: NewConversionModalProps) {
+export default function NewConversionModal() {
   const titleId = useId();
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { isOpen, url } = useSelector((state: RootState) => state.conversions.newConversion);
+  const { conversion, start, load, reset, isStarting, error } = useConversion();
+
+  useEffect(() => {
+    if (conversion?.status === ConversionStatus.Ready) router.push(`/${conversion.id}`);
+  }, [conversion, router]);
+
+  const close = () => {
+    reset();
+    dispatch(conversionsActions.closeNewConversion());
+  };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} aria-labelledby={titleId} className="max-w-116">
+    <Modal isOpen={isOpen} onClose={close} aria-labelledby={titleId} className="max-w-116">
       <button
         type="button"
-        onClick={onClose}
+        onClick={close}
         aria-label="Close"
         className="absolute top-6 right-7 flex transition-opacity hover:opacity-70"
       >
@@ -35,11 +56,37 @@ export default function NewConversionModal({ isOpen, onClose }: NewConversionMod
         >
           New conversion
         </h2>
-        <p className="mt-4 text-c767676 font-nunito-400 text-base md:text-[18px]">
-          Paste a published framer URL and convert to code
-        </p>
 
-        <FramerUrlForm className="max-w-80.5 mt-7 mb-3 p-1.5 rounded-xl bg-cf7f6f5" />
+        {conversion ? (
+          <div className="mt-7 mb-3 flex flex-col items-center gap-5">
+            <ConversionProgress conversion={conversion} />
+            <AuthFormError message={error} />
+            {conversion.status === ConversionStatus.Failed && (
+              <Button onClick={reset} className="rounded-lg max-w-40">
+                Try again
+              </Button>
+            )}
+            {error && conversion.status !== ConversionStatus.Failed && (
+              <Button onClick={() => load(conversion.id)} className="rounded-lg max-w-40">
+                Check again
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <p className="mt-4 text-c767676 font-nunito-400 text-base md:text-[18px]">
+              Paste a published framer URL and convert to code
+            </p>
+
+            <FramerUrlForm
+              initialUrl={url}
+              onSubmit={start}
+              isLoading={isStarting}
+              error={error}
+              className="max-w-80.5 mt-7 mb-3 p-1.5 rounded-xl bg-cf7f6f5"
+            />
+          </>
+        )}
       </div>
     </Modal>
   );

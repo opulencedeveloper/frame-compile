@@ -1,5 +1,6 @@
 import { HydratedDocument } from "mongoose";
 import { AuthProvider, GoogleUserStatus } from "../auth/enum";
+import { IVercelConnection } from "../deployment/interface";
 
 // A pending email verification. The code itself is never stored, only its hash.
 export interface IEmailVerification {
@@ -39,6 +40,8 @@ export interface IUser {
   termsAcceptedAt: Date;
   marketingConsent: IMarketingConsent;
   lastLoginAt?: Date;
+  // Set while the user has connected Vercel for deployments.
+  vercel?: IVercelConnection;
   createdAt: Date;
   updatedAt: Date;
 }

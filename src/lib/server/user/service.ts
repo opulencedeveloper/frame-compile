@@ -6,6 +6,7 @@ import {
   ISignUpConsent,
   UserDocument,
 } from "./interface";
+import { IVercelConnection } from "../deployment/interface";
 import { GoogleProfile } from "../utils/interface";
 import { logger } from "../utils/logger";
 
@@ -220,6 +221,22 @@ class UserService {
 
     logger.info("User created with Google", { userId: user.id });
     return user;
+  }
+
+  // The user's Vercel connection, with its (sealed) token.
+  async findVercelConnection(userId: string): Promise<IVercelConnection | null> {
+    const user = await User.findById(userId).select("+vercel.token");
+    return user?.vercel?.token ? user.vercel : null;
+  }
+
+  async setVercelConnection(userId: string, connection: IVercelConnection): Promise<void> {
+    await User.updateOne({ _id: userId }, { $set: { vercel: connection } });
+    logger.info("Vercel connected", { userId, username: connection.username });
+  }
+
+  async removeVercelConnection(userId: string): Promise<void> {
+    await User.updateOne({ _id: userId }, { $unset: { vercel: 1 } });
+    logger.info("Vercel disconnected", { userId });
   }
 
   private async linkGoogleAccount(

@@ -2,6 +2,7 @@ import Image from "next/image";
 import heroBg from "@/assets/images/hero-bg.png";
 import ExclusiveBadge from "@/components/shared/ExclusiveBadge";
 import FramerUrlForm from "@/components/shared/FramerUrlForm";
+import { DASHBOARD_ROUTE } from "@/constants/auth";
 
 export default function Hero() {
   return (
@@ -27,7 +28,7 @@ export default function Hero() {
         <h2 className="w-full max-w-lg mx-auto text-c292929 font-nunito-400 text-sm md:text-[18px] text-center">
           Export Framer sites into lightweight, production-grade HTML or Next.js code ready to deploy anywhere.
         </h2>
-        <FramerUrlForm />
+        <FramerUrlForm submitHref={DASHBOARD_ROUTE} />
       </div>
     </section>
   );

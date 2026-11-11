@@ -7,6 +7,9 @@ export const AUTH_KEYS = {
   REFERRAL_CODE: "referralCode",
 } as const;
 
+// Where signed-in users work. Matches config.app.afterLoginPath on the server.
+export const DASHBOARD_ROUTE = "/dashboard";
+
 export const AUTH_ROUTES = {
   GOOGLE: "/api/v1/auth/google",
 } as const;

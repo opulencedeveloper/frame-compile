@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { IEmailVerification, IMarketingConsent, IUser } from "./interface";
 import { AuthProvider } from "../auth/enum";
+import { IVercelConnection } from "../deployment/interface";
 
 const emailVerificationSchema = new Schema<IEmailVerification>(
   {
@@ -18,6 +19,16 @@ const marketingConsentSchema = new Schema<IMarketingConsent>(
     granted: { type: Boolean, required: true, default: false },
     grantedAt: { type: Date },
     revokedAt: { type: Date },
+  },
+  { _id: false },
+);
+
+const vercelConnectionSchema = new Schema<IVercelConnection>(
+  {
+    // Sealed with the server's key; never sent to the browser.
+    token: { type: String, required: true, select: false },
+    username: { type: String },
+    connectedAt: { type: Date, required: true },
   },
   { _id: false },
 );
@@ -76,6 +87,9 @@ const userSchema = new Schema<IUser>(
     lastLoginAt: {
       type: Date,
     },
+    vercel: {
+      type: vercelConnectionSchema,
+    },
   },
   {
     timestamps: true,
@@ -84,6 +98,7 @@ const userSchema = new Schema<IUser>(
       transform: (_doc, ret) => {
         delete ret.password;
         delete ret.emailVerification;
+        delete ret.vercel;
         return ret;
       },
     },

@@ -20,6 +20,12 @@ const config = {
     // Where users land after signing in, unless they were sent to sign-in
     // from another page (`redirectTo`).
     afterLoginPath: "/dashboard",
+    signInPath: "/sign-in",
+    // Where sign-in returns to, as given by the proxy.
+    redirectToParam: "redirectTo",
+    // Pages only signed-in users can open (see src/proxy.ts), besides each
+    // conversion's page, "/<conversion id>".
+    protectedPaths: ["/dashboard"],
   },
   db: {
     get uri() {
@@ -66,6 +72,184 @@ const config = {
     unsubscribePagePath: "/unsubscribe",
     // Mail clients POST here directly for one-click unsubscribe (RFC 8058).
     unsubscribeApiPath: "/api/v1/marketing/unsubscribe",
+  },
+  outboundFetch: {
+    // Sent with every request we make to a site being converted.
+    userAgent: "Mozilla/5.0 (compatible; FrameCompileBot/1.0)",
+    timeoutMs: 30_000,
+    maxRedirects: 5,
+    redirectStatuses: [301, 302, 303, 307, 308],
+    maxResponseBytes: 50 * 1024 * 1024,
+    defaultAccept: "*/*",
+    // Each attempt gets the full timeout; waits are 500ms, then 1s. Server
+    // errors (5xx) are retried, and these client statuses.
+    retry: { attempts: 3, baseDelayMs: 500, clientStatuses: [408, 429] },
+  },
+  // Converted projects are stored as one private repository each, on a
+  // GitHub account (or organization) kept for that purpose.
+  github: {
+    // A token for that account. Classic: the "repo" scope. Fine-grained:
+    // all repositories, with Administration and Contents read and write.
+    get token() {
+      return requireEnv("GITHUB_TOKEN");
+    },
+    // The user or organization that owns the repositories.
+    get owner() {
+      return requireEnv("GITHUB_OWNER");
+    },
+    apiUrl: "https://api.github.com",
+    apiVersion: "2022-11-28",
+    apiAccept: "application/vnd.github+json",
+    // Returns a file's bytes instead of JSON describing it.
+    rawFileAccept: "application/vnd.github.raw",
+    gitUrl: "https://github.com",
+    // The username GitHub expects when a token is sent as a password.
+    tokenUsername: "x-access-token",
+    // Commits are attributed to the storage account's private address.
+    noreplyEmailDomain: "users.noreply.github.com",
+    repositoryPrefix: "framecompile-",
+    branch: "main",
+    commitAuthorName: "FrameCompile",
+    requestTimeoutMs: 30_000,
+    // A project's zip is fetched and streamed through to the user, tens of
+    // MB.
+    archiveTimeoutMs: 5 * 60_000,
+    checkoutDirPrefix: "framecompile-checkout-",
+    // Pushing a large site (tens of MB of images) can take a while.
+    pushTimeoutMs: 10 * 60_000,
+    gitOutputMaxBytes: 1024 * 1024,
+    gitBinary: "git",
+    // git runs with only these from the server's environment, so it can find
+    // its binary and home directory but nothing else leaks in.
+    get gitInheritedEnv() {
+      return { PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: process.env.NODE_ENV };
+    },
+    // The machine's git configuration is ignored, so hooks, credential
+    // helpers or signing settings can't change what is pushed, and git never
+    // stops to ask for a password.
+    gitIsolationEnv: {
+      GIT_TERMINAL_PROMPT: "0",
+      GIT_CONFIG_NOSYSTEM: "1",
+      GIT_CONFIG_GLOBAL: "/dev/null",
+    },
+  },
+  // Converted sites run their own scripts, so they are previewed on another
+  // origin, never the app's: "<id>.<host>". In development "localhost:3000"
+  // works as is (browsers resolve *.localhost to this machine); in
+  // production, a separate domain with a wildcard DNS record and
+  // certificate, e.g. "framecompile-preview.app".
+  preview: {
+    // Optional so the app still runs without it; previews are then off.
+    get host(): string | null {
+      return process.env.PREVIEW_HOST?.trim().toLowerCase() || null;
+    },
+    // The internal route preview hosts are rewritten to (see src/proxy.ts).
+    routePath: "/api/v1/previews",
+    mimeTypes: {
+      ".html": "text/html; charset=utf-8",
+      ".mjs": "text/javascript; charset=utf-8",
+      ".js": "text/javascript; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".json": "application/json",
+      ".txt": "text/plain; charset=utf-8",
+      ".xml": "application/xml",
+      ".svg": "image/svg+xml",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".avif": "image/avif",
+      ".ico": "image/x-icon",
+      ".woff": "font/woff",
+      ".woff2": "font/woff2",
+      ".ttf": "font/ttf",
+      ".otf": "font/otf",
+      ".mp4": "video/mp4",
+      ".webm": "video/webm",
+      ".mov": "video/quicktime",
+      ".mp3": "audio/mpeg",
+      ".pdf": "application/pdf",
+    } as Record<string, string>,
+    defaultMimeType: "application/octet-stream",
+    // Ready sites (their manifest and repository) kept in memory.
+    maxCachedSites: 500,
+    pageCacheControl: "public, max-age=300",
+    assetCacheControl: "public, max-age=31536000, immutable",
+    // Files fetched from GitHub are kept in memory, up to this much.
+    cacheMaxBytes: 256 * 1024 * 1024,
+    // Larger files are served without being cached.
+    cacheMaxFileBytes: 8 * 1024 * 1024,
+  },
+  conversion: {
+    // Each conversion runs a headless browser, so only a few at once; the
+    // rest wait their turn.
+    maxConcurrent: 2,
+    // A user can have this many conversions queued or running.
+    maxActivePerUser: 1,
+    // A conversion still unfinished after this long was interrupted (e.g. a
+    // restart) and is reported as failed.
+    staleAfterMs: 30 * 60_000,
+    // 16 random bytes in lowercase base32: 26 characters, valid as a DNS
+    // label, so the id can be the preview's subdomain.
+    publicIdBytes: 16,
+    publicIdAlphabet: "abcdefghijklmnopqrstuvwxyz234567",
+    publicIdPattern: /^[a-z2-7]{26}$/,
+    // Issues stored with a conversion; the rest are counted.
+    maxStoredIssues: 200,
+    workDirPrefix: "framecompile-conversion-",
+    listDefaultLimit: 24,
+    listMaxLimit: 50,
+    searchMaxLength: 100,
+    // The downloaded zip, "<site>-nextjs.zip", and the folder inside it.
+    downloadSuffix: "-nextjs",
+  },
+  // Secrets stored for users (their Vercel token) are encrypted with this
+  // key: 32 random bytes, base64. Generate one with
+  //   openssl rand -base64 32
+  // Changing it makes stored tokens unreadable; users then reconnect.
+  secrets: {
+    get encryptionKey() {
+      const key = Buffer.from(requireEnv("TOKEN_ENCRYPTION_KEY"), "base64");
+      if (key.length !== 32) {
+        throw new Error("TOKEN_ENCRYPTION_KEY must be 32 bytes, base64-encoded");
+      }
+      return key;
+    },
+    algorithm: "aes-256-gcm",
+    ivBytes: 12,
+    // Prefix of the stored form, so the format can change later.
+    version: "v1",
+  },
+  // Deploying a converted project to the user's own Vercel account.
+  vercel: {
+    apiUrl: "https://api.vercel.com",
+    requestTimeoutMs: 30_000,
+    uploadTimeoutMs: 120_000,
+    // Files uploaded at once.
+    uploadConcurrency: 8,
+    framework: "nextjs",
+    // How often a building deployment's status is asked of Vercel, at most.
+    statusCheckIntervalMs: 3000,
+    // A deployment still uploading after this long was interrupted.
+    uploadStaleAfterMs: 15 * 60_000,
+    // How a team-scoped token's only account is shown: such a token can't
+    // read its team's name.
+    scopedTokenAccountName: "Your token's team",
+    // A working token that may not create projects: tokens scoped to a
+    // single team usually can't.
+    scopeHelp:
+      "This token can't create Vercel projects. Create a new token with Full Account as its scope, then connect it again.",
+    // Vercel project names: lowercase letters, digits and dashes.
+    projectNameMaxLength: 90,
+  },
+  // Headless Chromium used to find files a site's runtime only requests
+  // while it runs. Unset, Playwright uses the browser installed with
+  // `npx playwright-core install chromium`.
+  browser: {
+    get executablePath() {
+      return process.env.BROWSER_EXECUTABLE_PATH?.trim() || undefined;
+    },
   },
   google: {
     get clientId() {

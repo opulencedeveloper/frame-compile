@@ -53,6 +53,17 @@ export interface ClassNameProps {
   className?: string;
 }
 
+export interface FramerUrlFormProps extends ClassNameProps {
+  // Called with the trimmed URL.
+  onSubmit?: (url: string) => void;
+  // Without onSubmit: the page submitting the form goes to, with the URL.
+  submitHref?: string;
+  // What the field starts with.
+  initialUrl?: string;
+  isLoading?: boolean;
+  error?: string | null;
+}
+
 export interface CheckboxProps extends Omit<ComponentProps<"input">, "type"> {
   label: ReactNode;
 }
@@ -68,4 +79,8 @@ export interface BackLinkProps {
   // Handles Back in place (e.g. a previous step on the same page) instead
   // of navigating.
   onBack?: () => void;
+}
+
+export interface ClientProviderProps {
+  children: ReactNode;
 }

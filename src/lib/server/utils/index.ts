@@ -1,5 +1,5 @@
 import { unstable_rethrow } from "next/navigation";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { MessageResponse } from "./enum";
 import { CustomHttpResponse, Handler } from "./interface";
 import { logger } from "./logger";
@@ -16,10 +16,11 @@ class Utils {
 
   // `onError` lets browser-facing routes (e.g. OAuth callbacks) redirect
   // instead of returning JSON the user would see as a raw page.
-  public withErrorHandling(handler: Handler, onError?: () => Response) {
-    return async (req: NextRequest) => {
+  // The route context (dynamic `params`) is passed through to the handler.
+  public withErrorHandling<C>(handler: Handler<C>, onError?: () => Response) {
+    return async (req: NextRequest, context: C) => {
       try {
-        return await handler(req);
+        return await handler(req, context);
       } catch (error) {
         // Let Next.js handle its own control-flow signals (prerender bailouts,
         // redirect(), notFound()) instead of reporting them as failures.
@@ -40,6 +41,23 @@ class Utils {
         });
       }
     };
+  }
+
+  // The background counterpart of withErrorHandling. Work scheduled with
+  // after() runs once the response has been sent, so no route can catch
+  // its errors: they are logged and handed to `onError` (e.g. to record
+  // that a job failed).
+  public runInBackground(task: () => Promise<void>, onError: (error: unknown) => Promise<void>) {
+    after(async () => {
+      try {
+        await task();
+      } catch (error) {
+        logger.error("Background task failed", error);
+        await onError(error).catch((handlerError: unknown) =>
+          logger.error("Background task error handler failed", handlerError),
+        );
+      }
+    });
   }
 
   // Malformed JSON becomes null, so the validator answers with a 400

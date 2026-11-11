@@ -30,8 +30,33 @@ export enum SiteAction {
   Delete = "delete",
 }
 
+// Mirrors ConversionStatus in src/lib/server/conversion/enum.ts.
+export enum ConversionStatus {
+  Queued = "queued",
+  Capturing = "capturing",
+  Storing = "storing",
+  Ready = "ready",
+  Failed = "failed",
+}
+
 export enum SiteFilter {
   All = "all",
   Deployed = "deployed",
   NotDeployed = "not-deployed",
+}
+
+// Mirrors DeploymentStatus in src/lib/server/deployment/enum.ts.
+export enum DeploymentStatus {
+  Uploading = "uploading",
+  Building = "building",
+  Ready = "ready",
+  Failed = "failed",
+}
+
+// The steps of the deploy modal.
+export enum DeployStep {
+  Loading = "loading",
+  Token = "token",
+  Account = "account",
+  Progress = "progress",
 }

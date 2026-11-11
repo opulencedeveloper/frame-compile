@@ -9,7 +9,6 @@ export default function AuthHeader() {
 
   return (
     <Header
-      showConvertLink={false}
       authLinkHref={isSignUpPage ? "/sign-in" : "/sign-up"}
       authLinkText={isSignUpPage ? "Sign in" : "Sign up"}
     />

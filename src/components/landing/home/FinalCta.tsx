@@ -1,5 +1,6 @@
 import Image from "next/image";
 import FramerUrlForm from "@/components/shared/FramerUrlForm";
+import { DASHBOARD_ROUTE } from "@/constants/auth";
 import ConvertVisualFramerSitesBg from "@/assets/images/convert-visual-framer-sites.png";
 
 export default function FinalCta() {
@@ -23,7 +24,7 @@ export default function FinalCta() {
         <p className="w-full max-w-lg mx-auto text-base md:text-[18px] font-nunito-400 text-c292929 text-center mb-5.5">
           Export Framer sites into lightweight, production-grade HTML or Next.js code ready to deploy anywhere.
         </p>
-        <FramerUrlForm />
+        <FramerUrlForm submitHref={DASHBOARD_ROUTE} />
       </div>
     </section>
   );

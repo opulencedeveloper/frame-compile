@@ -1,8 +1,10 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useCallback } from "react";
 
+import { isAxiosError } from "axios";
+
 import axios from "@/lib/axios";
-import { HttpRequestConfigProps } from "@/types/http";
+import { ApiErrorBody, HttpRequestConfigProps } from "@/types/http";
 
 export const useHttp = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,13 +32,9 @@ export const useHttp = () => {
             // The browser automatically sends the auth-token cookie
           },
           ...(requestConfig.params && { params: requestConfig.params }),
-          ...(requestConfig.body && { data: requestConfig.body }),
+          ...(requestConfig.body !== undefined && { data: requestConfig.body }),
         };
-        console.log("requestData:", config);
-
         const res = await axios.request(config);
-
-        console.log("responseData:", res.data.data);
 
         if (res.status >= 200 && res.status < 300) {
           if (requestConfig.successMessage) {
@@ -45,7 +43,9 @@ export const useHttp = () => {
 
           successRes(res);
         }
-      } catch (error: any) {
+      } catch (caught: unknown) {
+        const error = isAxiosError<ApiErrorBody>(caught) ? caught : null;
+
         // Check if custom error handler is provided and should be used
         if (errorRes && error?.response) {
           const shouldUseCustomHandler = errorRes(error.response);
@@ -59,20 +59,20 @@ export const useHttp = () => {
 
         let errorMessage = "Something went wrong!";
 
-        if (error.code === "ERR_NETWORK") {
+        if (error?.code === "ERR_NETWORK") {
           errorMessage =
             "Network error. Please check your internet connection.";
-        } else if (error.code === "ECONNABORTED") {
+        } else if (error?.code === "ECONNABORTED") {
           errorMessage = "Request timed out. Please try again.";
         } else if (error?.response?.data?.description) {
           errorMessage = error?.response?.data?.description;
         }
 
         const isAuthEndpoint =
-          error.config?.url?.includes("auth") ||
-          error.config?.url?.includes("login");
+          error?.config?.url?.includes("auth") ||
+          error?.config?.url?.includes("login");
 
-        if (error.response?.status === 401 && !isAuthEndpoint) {
+        if (error?.response?.status === 401 && !isAuthEndpoint) {
           errorMessage = "Session expired!";
 
           if (pathname) {

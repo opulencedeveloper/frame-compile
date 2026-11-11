@@ -27,6 +27,18 @@ export enum TokenAudience {
   Unsubscribe = "unsubscribe",
 }
 
+export enum FetchFailureReason {
+  InvalidUrl = "invalid_url",
+  // A private, loopback or otherwise non-public address, or a non-default
+  // port: refused so user-supplied URLs can't reach internal services.
+  BlockedAddress = "blocked_address",
+  HttpError = "http_error",
+  TooManyRedirects = "too_many_redirects",
+  TooLarge = "too_large",
+  Timeout = "timeout",
+  NetworkError = "network_error",
+}
+
 export enum CookieNames {
   UserAuthToken = "user_auth_token",
   GoogleOAuthState = "google_oauth_state",

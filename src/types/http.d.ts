@@ -1,3 +1,5 @@
+import { AxiosResponse } from "axios";
+
 type HttpRequestConfigType = {
   url: string;
   method: string;
@@ -5,12 +7,21 @@ type HttpRequestConfigType = {
   successMessage?: string;
   baseURL?: string;
   isAuth?: boolean;
-  params?: any;
-  body?: any;
+  params?: Record<string, unknown>;
+  body?: unknown;
 };
+
+// The body of an error response from the API.
+export interface ApiErrorBody {
+  message?: string;
+  description?: string;
+  // Per endpoint, e.g. { retryAfterSeconds } when a code was resent too soon.
+  data?: Record<string, unknown> | null;
+}
 
 export interface HttpRequestConfigProps {
   requestConfig: HttpRequestConfigType;
-  successRes: (data: any) => void;
-  errorRes?: (error: any) => boolean | void; // Return false to prevent default error handling
+  successRes: (res: AxiosResponse) => void;
+  // Return false to prevent default error handling.
+  errorRes?: (error: AxiosResponse<ApiErrorBody>) => boolean | void;
 }

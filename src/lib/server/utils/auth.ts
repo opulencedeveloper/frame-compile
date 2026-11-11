@@ -1,9 +1,10 @@
 import crypto from "crypto";
 import { SignJWT, jwtVerify } from "jose";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import config from "../config";
-import { CookieNames, TokenAudience } from "./enum";
-import { ScryptParams, SessionPayload } from "./interface";
+import { utils } from "./index";
+import { CookieNames, MessageResponse, TokenAudience } from "./enum";
+import { ScryptParams, SessionCheck, SessionPayload } from "./interface";
 
 class Auth {
   private createSessionToken({ userId }: SessionPayload) {
@@ -32,6 +33,36 @@ class Auth {
     const result = await jwtVerify(token, config.jwt.secret, {
       algorithms: ["HS256"],
       audience: TokenAudience.Unsubscribe,
+    }).catch(() => null);
+    return result?.payload.sub ?? null;
+  }
+
+  // The signed-in user, or a 401 response for the route to return. Same
+  // shape as a validation result, so routes check both the same way.
+  public async requireSession(req: NextRequest): Promise<SessionCheck> {
+    const userId = await this.sessionUserId(req.cookies.get(CookieNames.UserAuthToken)?.value);
+
+    if (!userId) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 401,
+          message: MessageResponse.Error,
+          description: "Please sign in to continue.",
+          data: null,
+        }),
+      };
+    }
+    return { valid: true, value: { userId } };
+  }
+
+  // The user a session cookie belongs to, or null for a missing, expired,
+  // forged or wrong-kind token. Checks the signature only, no database.
+  public async sessionUserId(token: string | undefined): Promise<string | null> {
+    if (!token) return null;
+    const result = await jwtVerify(token, config.jwt.secret, {
+      algorithms: ["HS256"],
+      audience: TokenAudience.Session,
     }).catch(() => null);
     return result?.payload.sub ?? null;
   }

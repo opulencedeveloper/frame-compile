@@ -1,5 +1,8 @@
+import { ReactNode } from "react";
+
 export interface HeaderProps {
-  showConvertLink?: boolean;
+  // Replaces the auth link (the landing page's session-aware links).
+  actions?: ReactNode;
   authLinkHref?: string;
   authLinkText?: string;
 }

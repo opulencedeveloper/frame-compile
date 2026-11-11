@@ -11,11 +11,6 @@ export interface HamburgerButtonProps {
   "aria-controls": string;
 }
 
-export interface NewConversionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
 export interface ActionMenuItem {
   label: string;
   value: string;
