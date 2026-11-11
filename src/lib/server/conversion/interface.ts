@@ -48,6 +48,9 @@ export interface IConversion {
   // Refreshed while a server holds the conversion; when it stops, the
   // server that held it has gone (see config.conversion.staleAfterMs).
   heartbeatAt?: Date;
+  // Set on conversions that failed on the user's input (a wrong URL, not a
+  // Framer site): hidden from the list at once, deleted by MongoDB then.
+  expireAt?: Date;
   completedAt?: Date;
   // When the project was last deployed; unset until it is.
   deployedAt?: Date;

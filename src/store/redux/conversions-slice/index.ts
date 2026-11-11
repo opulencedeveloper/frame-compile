@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Conversion, ConversionList, ConversionsState } from "@/types/conversion";
 import { SiteFilter } from "@/utils/enum";
+import { isConversionBusy } from "@/utils/conversion";
 
 const initialState: ConversionsState = {
   newConversion: { isOpen: false, url: "" },
@@ -34,7 +35,11 @@ const conversionsSlice = createSlice({
     // finishing); new ones aren't added mid-list.
     refreshConversions(state, action: PayloadAction<ConversionList>) {
       const fresh = new Map(action.payload.conversions.map((conversion) => [conversion.id, conversion]));
-      state.conversions = state.conversions.map((conversion) => fresh.get(conversion.id) ?? conversion);
+      state.conversions = state.conversions.flatMap((conversion) => {
+        const updated = fresh.get(conversion.id);
+        if (updated) return [updated];
+        return isConversionBusy(conversion) ? [] : [conversion];
+      });
       state.counts = action.payload.counts;
     },
 

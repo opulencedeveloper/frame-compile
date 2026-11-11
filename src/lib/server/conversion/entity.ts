@@ -82,6 +82,7 @@ const conversionSchema = new Schema<IConversion>(
     issues: { type: [issueSchema], default: [] },
     startedAt: { type: Date },
     heartbeatAt: { type: Date },
+    expireAt: { type: Date },
     completedAt: { type: Date },
     deployedAt: { type: Date },
     deployment: { type: deploymentSchema },
@@ -92,6 +93,8 @@ const conversionSchema = new Schema<IConversion>(
 // A user's conversions, newest first, and their active ones.
 conversionSchema.index({ user: 1, createdAt: -1 });
 conversionSchema.index({ user: 1, status: 1 });
+// MongoDB deletes a conversion once its expireAt has passed.
+conversionSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
 const Conversion =
   (mongoose.models.Conversion as mongoose.Model<IConversion>) ||

@@ -196,6 +196,9 @@ const config = {
     maxConcurrent: 2,
     // A user can have this many conversions queued or running.
     maxActivePerUser: 1,
+    // A conversion that failed on the user's input is kept this long, so the
+    // page that started it can still show why, then deleted.
+    inputFailureRetentionMs: 60 * 60_000,
     // Where the conversions API is served; links in its answers start here.
     apiPath: "/api/v1/conversions",
     // A conversion's thumbnail never changes, but it is the user's own:

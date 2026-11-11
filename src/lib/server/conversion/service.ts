@@ -35,6 +35,17 @@ import {
 
 const IN_PROGRESS = [ConversionStatus.Queued, ConversionStatus.Capturing, ConversionStatus.Storing];
 
+// Failures caused by what the user entered. The user sees the reason while
+// waiting; nothing is kept, so they don't fill the list.
+const INPUT_FAILURES = [
+  ConversionFailureCode.InvalidUrl,
+  ConversionFailureCode.SiteUnreachable,
+  ConversionFailureCode.NotFramerSite,
+];
+
+// Conversions shown to the user: not ones waiting to be deleted.
+const LISTED = { expireAt: { $exists: false } };
+
 const FAILURE_FOR_CAPTURE_ERROR: Record<ConversionErrorCode, ConversionFailureCode> = {
   [ConversionErrorCode.InvalidUrl]: ConversionFailureCode.InvalidUrl,
   [ConversionErrorCode.SiteUnreachable]: ConversionFailureCode.SiteUnreachable,
@@ -86,6 +97,7 @@ class ConversionService {
   async listUserConversions(userId: string, { limit, before, filter, search }: IConversionListQuery) {
     const found = await Conversion.find({
       user: userId,
+      ...LISTED,
       ...(before && { createdAt: { $lt: before } }),
       ...(filter === ConversionListFilter.Deployed && { deployedAt: { $exists: true } }),
       ...(filter === ConversionListFilter.NotDeployed && { deployedAt: { $exists: false } }),
@@ -105,8 +117,8 @@ class ConversionService {
 
   async countUserConversions(userId: string): Promise<IConversionCounts> {
     const [all, deployed] = await Promise.all([
-      Conversion.countDocuments({ user: userId }),
-      Conversion.countDocuments({ user: userId, deployedAt: { $exists: true } }),
+      Conversion.countDocuments({ user: userId, ...LISTED }),
+      Conversion.countDocuments({ user: userId, ...LISTED, deployedAt: { $exists: true } }),
     ]);
     return { all, deployed, notDeployed: all - deployed };
   }
@@ -155,9 +167,13 @@ class ConversionService {
   }
 
   private async saveFailure(publicId: string, failure: IConversionFailure) {
+    const now = new Date();
+    const expireAt = INPUT_FAILURES.includes(failure.code)
+      ? new Date(now.getTime() + config.conversion.inputFailureRetentionMs)
+      : undefined;
     await Conversion.updateOne(
       { publicId, status: { $in: IN_PROGRESS } },
-      { $set: { status: ConversionStatus.Failed, failure, completedAt: new Date() } },
+      { $set: { status: ConversionStatus.Failed, failure, completedAt: now, ...(expireAt && { expireAt }) } },
     );
     logger.warn("Conversion failed", { conversionId: publicId, code: failure.code });
   }
