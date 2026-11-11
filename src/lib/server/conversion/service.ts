@@ -11,6 +11,7 @@ import { ICaptureResult, IProjectResult } from "../framer-to-nextjs/interface";
 import { nextProject } from "../framer-to-nextjs/project";
 import { DirectorySnapshotSink } from "../framer-to-nextjs/sink";
 import { GitHubError, github } from "../utils/github";
+import { IGitHubRepository } from "../utils/interface";
 import { logger } from "../utils/logger";
 import { previewHost } from "../utils/preview-host";
 import { TaskQueue } from "../utils/task-queue";
@@ -227,6 +228,21 @@ class ConversionService {
       `${config.github.repositoryPrefix}${conversion.publicId}`,
       `Next.js project converted from ${conversion.sourceUrl}`,
     );
+    // A failed conversion keeps no repository, so one that can't be filled
+    // is removed rather than left behind on the account.
+    return this.push(conversion, repository, projectDir, previewDir).catch(async (error: unknown) => {
+      const isDeleted = await github.deleteRepository(repository).catch(() => false);
+      if (!isDeleted) logger.warn("Repository of a failed conversion not deleted", { ...repository });
+      throw error;
+    });
+  }
+
+  private async push(
+    conversion: ConversionDocument,
+    repository: IGitHubRepository,
+    projectDir: string,
+    previewDir: string,
+  ): Promise<IConversionRepository> {
     const commitSha = await github.pushDirectory(
       projectDir,
       repository,
@@ -238,7 +254,7 @@ class ConversionService {
       `Preview of ${conversion.sourceUrl}`,
       framerConfig.preview.branch,
     );
-    return { ...repository, commitSha, previewCommitSha };
+    return { owner: repository.owner, name: repository.name, commitSha, previewCommitSha };
   }
 
   private finishedCapture(

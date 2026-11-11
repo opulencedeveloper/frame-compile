@@ -117,6 +117,15 @@ const config = {
     checkoutDirPrefix: "framecompile-checkout-",
     // Pushing a large site (tens of MB of images) can take a while.
     pushTimeoutMs: 10 * 60_000,
+    // A push cut off mid-upload is tried again, waiting a little longer
+    // each time. Pushing the same commit again is safe.
+    pushAttempts: 3,
+    pushRetryDelayMs: 2_000,
+    // Settings git runs with. Large uploads over HTTP/2 can be cut off
+    // ("HTTP/2 stream was not closed cleanly"); HTTP/1.1 doesn't have that.
+    gitSettings: {
+      "http.version": "HTTP/1.1",
+    } as Record<string, string>,
     gitOutputMaxBytes: 1024 * 1024,
     gitBinary: "git",
     // git runs with only these from the server's environment, so it can find

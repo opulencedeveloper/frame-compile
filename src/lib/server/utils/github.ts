@@ -6,6 +6,7 @@ import { Readable } from "node:stream";
 import { promisify } from "node:util";
 import config from "../config";
 import { IGitCheckout, IGitHubAccount, IGitHubRepository } from "./interface";
+import { logger } from "./logger";
 
 const run = promisify(execFile);
 
@@ -73,8 +74,22 @@ class GitHubStorage {
     await git("add", "--all");
     await git("commit", "--quiet", "--no-verify", `--message=${message}`);
     const { stdout } = await git("rev-parse", "HEAD");
-    await git("push", "--quiet", this.remoteUrl(repository), `HEAD:refs/heads/${branch}`);
+    await this.retryPush(() => git("push", "--quiet", this.remoteUrl(repository), `HEAD:refs/heads/${branch}`));
     return stdout.trim();
+  }
+
+  // A push that fails is tried again; the last failure is reported as a
+  // GitHubError, so the conversion is marked as a storage failure.
+  private async retryPush(push: () => Promise<unknown>, attempt = 1): Promise<void> {
+    await push().catch(async (error: unknown) => {
+      const reason = error instanceof Error ? error.message : String(error);
+      if (attempt >= config.github.pushAttempts) {
+        throw new GitHubError(`git push failed after ${attempt} attempts: ${reason}`);
+      }
+      logger.warn("git push failed, retrying", { attempt, reason: reason.slice(0, 300) });
+      await new Promise((resolve) => setTimeout(resolve, config.github.pushRetryDelayMs * attempt));
+      return this.retryPush(push, attempt + 1);
+    });
   }
 
   // A file at a commit, or null if the repository has no such file.
@@ -209,12 +224,21 @@ class GitHubStorage {
       `${config.github.tokenUsername}:${config.github.token}`,
     ).toString("base64");
 
+    const settings = Object.entries({
+      ...config.github.gitSettings,
+      "http.extraHeader": `Authorization: Basic ${credentials}`,
+    });
+
     return {
       ...config.github.gitInheritedEnv,
       ...config.github.gitIsolationEnv,
-      GIT_CONFIG_COUNT: "1",
-      GIT_CONFIG_KEY_0: "http.extraHeader",
-      GIT_CONFIG_VALUE_0: `Authorization: Basic ${credentials}`,
+      GIT_CONFIG_COUNT: String(settings.length),
+      ...Object.fromEntries(
+        settings.flatMap(([key, value], index) => [
+          [`GIT_CONFIG_KEY_${index}`, key],
+          [`GIT_CONFIG_VALUE_${index}`, value],
+        ]),
+      ),
       GIT_AUTHOR_NAME: config.github.commitAuthorName,
       GIT_AUTHOR_EMAIL: email,
       GIT_COMMITTER_NAME: config.github.commitAuthorName,
