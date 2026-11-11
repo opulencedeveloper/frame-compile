@@ -1,26 +1,248 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@utility scrollbar-hidden {
+  scrollbar-width: none;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@font-face {
+  font-family: "HedvigLettersSerif-14pt";
+  src: url('/assets/fonts/HedvigLettersSerif_14pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "HedvigLettersSerif-18pt";
+  src: url('/assets/fonts/HedvigLettersSerif_18pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-ExtraLight";
+  src: url('/assets/fonts/Nunito-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-ExtraLightItalic";
+  src: url('/assets/fonts/Nunito-ExtraLightItalic.ttf') format('truetype');
+  font-weight: 200;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-Light";
+  src: url('/assets/fonts/Nunito-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-LightItalic";
+  src: url('/assets/fonts/Nunito-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-Regular";
+  src: url('/assets/fonts/Nunito-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-Italic";
+  src: url('/assets/fonts/Nunito-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-Medium";
+  src: url('/assets/fonts/Nunito-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-MediumItalic";
+  src: url('/assets/fonts/Nunito-MediumItalic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-SemiBold";
+  src: url('/assets/fonts/Nunito-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-SemiBoldItalic";
+  src: url('/assets/fonts/Nunito-SemiBoldItalic.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-Bold";
+  src: url('/assets/fonts/Nunito-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-BoldItalic";
+  src: url('/assets/fonts/Nunito-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-ExtraBold";
+  src: url('/assets/fonts/Nunito-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-ExtraBoldItalic";
+  src: url('/assets/fonts/Nunito-ExtraBoldItalic.ttf') format('truetype');
+  font-weight: 800;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Nunito-Black";
+  src: url('/assets/fonts/Nunito-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Nunito-BlackItalic";
+  src: url('/assets/fonts/Nunito-BlackItalic.ttf') format('truetype');
+  font-weight: 900;
+  font-style: italic;
+}
+
+@theme inline {
+  --breakpoint-mid: 1397px;
+  --container-max-width: 1900px;
+  --color-cdcdce1: #DCDCE1;
+  --color-c040406: #040406;
+  --color-ce9f5ff: #E9F5FF;
+  --color-c0081d8: #0081D8;
+  --color-c0a0a0a: #0A0A0A;
+  --color-c292929: #292929;
+  --color-c8a8a8a: #8A8A8A;
+  --color-cf7f6f5: #F7F6F5;
+  --color-c767676: #767676;
+  --color-ceff6ff: #EFF6FF;
+  --color-c18181b: #18181B;
+  --color-c2e3038: #2E3038;
+  --color-ce2e3e9: #E2E3E9;
+  --color-c726aff: #726AFF;
+  --color-cfafafa: #FAFAFA;
+  --color-cfbfbfb: #FBFBFB;
+  --color-cf4f4f6: #F4F4F6;
+  --color-ceaeaee: #EAEAEE;
+  --color-cdcdce2: #DCDCE2;
+  --color-c16161a: #16161A;
+  --color-c6c6c76: #6C6C76;
+  --color-cadada8: #ADADA8;
+  --color-caaa9a5: #AAA9A5;
+  --color-cf0f0ed: #F0F0ED;
+  --color-c63636d: #63636D;
+  --color-cdc2626: #DC2626;
+  --color-c666666b2: #666666B2;
+  --color-c6750a429: #6750A429;
+  --color-c6155f5: #6155F5;
+  --color-c666666: #666666;
+  --color-c0a0a0a80: #0A0A0A80;
+  --color-c282828: #282828;
+  --color-cff383c: #FF383C;
+  --color-c5f5d5d1a: #5F5D5D1A;
+  --color-c5f5d5d17: #5F5D5D17;
+  --color-c5f5d5d0d: #5F5D5D0D;
+  --color-c5f5d5d03: #5F5D5D03;
+  --color-c5f5d5d00: #5F5D5D00;
+  --shadow-action-menu:
+    0px 10px 22px 0px var(--color-c5f5d5d1a),
+    0px 40px 40px 0px var(--color-c5f5d5d17),
+    0px 91px 54px 0px var(--color-c5f5d5d0d),
+    0px 161px 65px 0px var(--color-c5f5d5d03),
+    0px 252px 71px 0px var(--color-c5f5d5d00);
+  --font-hedvig-400-14: "HedvigLettersSerif-14pt", sans-serif;
+  --font-hedvig-400-18: "HedvigLettersSerif-18pt", sans-serif;
+  --font-nunito-200: "Nunito-ExtraLight", sans-serif;
+  --font-nunito-200-italic: "Nunito-ExtraLightItalic", sans-serif;
+  --font-nunito-300: "Nunito-Light", sans-serif;
+  --font-nunito-300-italic: "Nunito-LightItalic", sans-serif;
+  --font-nunito-400: "Nunito-Regular", sans-serif;
+  --font-nunito-400-italic: "Nunito-Italic", sans-serif;
+  --font-nunito-500: "Nunito-Medium", sans-serif;
+  --font-nunito-500-italic: "Nunito-MediumItalic", sans-serif;
+  --font-nunito-600: "Nunito-SemiBold", sans-serif;
+  --font-nunito-600-italic: "Nunito-SemiBoldItalic", sans-serif;
+  --font-nunito-700: "Nunito-Bold", sans-serif;
+  --font-nunito-700-italic: "Nunito-BoldItalic", sans-serif;
+  --font-nunito-800: "Nunito-ExtraBold", sans-serif;
+  --font-nunito-800-italic: "Nunito-ExtraBoldItalic", sans-serif;
+  --font-nunito-900: "Nunito-Black", sans-serif;
+  --font-nunito-900-italic: "Nunito-BlackItalic", sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-cebebeb);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: var(--color-c030303);
+      --foreground: var(--color-cebebeb);
+    }
+  }
+
+  html {
+    @media (prefers-reduced-motion: no-preference) {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    font-family: var(--font-nunito-400), serif;
+    font-weight: 400;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll;
+  }
+
+  /* These pages scroll inside their own panels, so the page itself must not
+     show a scrollbar. */
+  body:has([data-fixed-viewport]) {
+    overflow-y: hidden;
+  }
+
+  button,
+  a {
+    cursor: pointer;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
