@@ -43,6 +43,10 @@ const FAILURE_FOR_CAPTURE_ERROR: Record<ConversionErrorCode, ConversionFailureCo
 class ConversionService {
   // Each conversion runs a headless browser: a few at a time per server.
   private readonly queue = new TaskQueue(config.conversion.maxConcurrent);
+  // Conversions this server has queued or is running, kept alive by the
+  // heartbeat while there are any.
+  private readonly held = new Set<string>();
+  private heartbeat: NodeJS.Timeout | null = null;
 
   async createConversion(userId: string, sourceUrl: string): Promise<ConversionDocument> {
     const conversion = await Conversion.create({
@@ -51,18 +55,23 @@ class ConversionService {
       source: ConversionSource.Framer,
       sourceUrl,
       status: ConversionStatus.Queued,
+      heartbeatAt: new Date(),
     });
     logger.info("Conversion created", { conversionId: conversion.publicId, userId });
     return conversion;
   }
 
-  // Conversions the user is waiting on. Ones left unfinished by a restart
-  // don't count, so they can't block the user for good.
+  // Conversions the user is waiting on. Ones whose server has gone don't
+  // count, so they can't block the user.
   async countActiveConversions(userId: string): Promise<number> {
+    const staleBefore = this.staleBefore();
     return Conversion.countDocuments({
       user: userId,
       status: { $in: IN_PROGRESS },
-      createdAt: { $gt: this.staleBefore() },
+      $or: [
+        { heartbeatAt: { $gt: staleBefore } },
+        { heartbeatAt: { $exists: false }, createdAt: { $gt: staleBefore } },
+      ],
     });
   }
 
@@ -113,7 +122,31 @@ class ConversionService {
   // Waits for a free slot, then converts. Errors are left to the caller
   // (see utils.runInBackground), which records them with markFailed.
   async process(publicId: string): Promise<void> {
-    await this.queue.run(() => this.convert(publicId));
+    this.hold(publicId);
+    try {
+      await this.queue.run(() => this.convert(publicId));
+    } finally {
+      this.release(publicId);
+    }
+  }
+
+  private hold(publicId: string) {
+    this.held.add(publicId);
+    this.heartbeat ??= setInterval(() => this.beat(), config.conversion.heartbeatIntervalMs).unref();
+  }
+
+  private release(publicId: string) {
+    this.held.delete(publicId);
+    if (this.held.size > 0 || !this.heartbeat) return;
+    clearInterval(this.heartbeat);
+    this.heartbeat = null;
+  }
+
+  private beat() {
+    Conversion.updateMany(
+      { publicId: { $in: [...this.held] }, status: { $in: IN_PROGRESS } },
+      { $set: { heartbeatAt: new Date() } },
+    ).catch((error: unknown) => logger.warn("Conversion heartbeat failed", { error }));
   }
 
   async markFailed(publicId: string, error: unknown): Promise<void> {
@@ -139,7 +172,7 @@ class ConversionService {
       previewUrl: isReady ? previewHost.urlFor(conversion.publicId) : null,
       thumbnailUrl:
         isReady && conversion.thumbnailPath
-          ? `${previewHost.urlFor(conversion.publicId)}${conversion.thumbnailPath.slice(1)}`
+          ? `${config.conversion.apiPath}/${conversion.publicId}/thumbnail`
           : null,
       summary: conversion.summary ?? null,
       deployment: conversion.deployment
@@ -239,11 +272,11 @@ class ConversionService {
     logger.info("Conversion ready", { conversionId: publicId, ...finished.summary });
   }
 
-  // A conversion still in progress long after it started was cut off by a
-  // restart; nothing will finish it now.
+  // A conversion still in progress whose heartbeat stopped lost its server
+  // (a restart or deploy); nothing will finish it now.
   private async failIfStale(conversion: ConversionDocument): Promise<ConversionDocument> {
-    const isStale =
-      IN_PROGRESS.includes(conversion.status) && conversion.createdAt <= this.staleBefore();
+    const lastAlive = conversion.heartbeatAt ?? conversion.createdAt;
+    const isStale = IN_PROGRESS.includes(conversion.status) && lastAlive <= this.staleBefore();
     if (!isStale) return conversion;
 
     await this.saveFailure(conversion.publicId, {

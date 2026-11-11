@@ -92,6 +92,28 @@ class ConversionController {
     });
   }
 
+  // Served from the app's host, so the dashboard shows thumbnails without
+  // reaching each conversion's preview host.
+  public async thumbnail(userId: string, { id }: IConversionParams) {
+    const conversion = await conversionService.findUserConversion(userId, id);
+    if (conversion?.status !== ConversionStatus.Ready) return this.notFound();
+
+    const file = await previewService.getThumbnailFile(id);
+    if (!file) return this.notFound();
+
+    const body = new Uint8Array(
+      file.body.buffer as ArrayBuffer,
+      file.body.byteOffset,
+      file.body.byteLength,
+    );
+    return new Response(body, {
+      headers: {
+        "Content-Type": file.contentType,
+        "Cache-Control": config.conversion.thumbnailCacheControl,
+      },
+    });
+  }
+
   // Removes the conversion and its repository. A running conversion can't
   // be deleted: it would recreate its repository when it finishes.
   public async remove(userId: string, { id }: IConversionParams) {

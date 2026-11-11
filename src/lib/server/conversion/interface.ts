@@ -45,6 +45,9 @@ export interface IConversion {
   thumbnailPath?: string;
   issues: ICaptureIssue[];
   startedAt?: Date;
+  // Refreshed while a server holds the conversion; when it stops, the
+  // server that held it has gone (see config.conversion.staleAfterMs).
+  heartbeatAt?: Date;
   completedAt?: Date;
   // When the project was last deployed; unset until it is.
   deployedAt?: Date;

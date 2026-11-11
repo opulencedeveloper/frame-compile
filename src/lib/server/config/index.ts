@@ -187,9 +187,18 @@ const config = {
     maxConcurrent: 2,
     // A user can have this many conversions queued or running.
     maxActivePerUser: 1,
-    // A conversion still unfinished after this long was interrupted (e.g. a
-    // restart) and is reported as failed.
-    staleAfterMs: 30 * 60_000,
+    // Where the conversions API is served; links in its answers start here.
+    apiPath: "/api/v1/conversions",
+    // A conversion's thumbnail never changes, but it is the user's own:
+    // cached by their browser only.
+    thumbnailCacheControl: "private, max-age=31536000, immutable",
+    // While a server holds a conversion (queued or running) it refreshes the
+    // conversion's heartbeat this often.
+    heartbeatIntervalMs: 30_000,
+    // An unfinished conversion whose heartbeat is older than this lost its
+    // server (e.g. a restart or deploy) and is reported as interrupted.
+    // Several missed heartbeats, so a busy server isn't mistaken for a gone one.
+    staleAfterMs: 3 * 60_000,
     // 16 random bytes in lowercase base32: 26 characters, valid as a DNS
     // label, so the id can be the preview's subdomain.
     publicIdBytes: 16,

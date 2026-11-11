@@ -81,6 +81,7 @@ const conversionSchema = new Schema<IConversion>(
     thumbnailPath: { type: String },
     issues: { type: [issueSchema], default: [] },
     startedAt: { type: Date },
+    heartbeatAt: { type: Date },
     completedAt: { type: Date },
     deployedAt: { type: Date },
     deployment: { type: deploymentSchema },

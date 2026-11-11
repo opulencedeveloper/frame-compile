@@ -40,6 +40,15 @@ class PreviewService {
     return this.getPage(site, page);
   }
 
+  // The dashboard thumbnail, or null when the conversion has none. Only an
+  // image, so it is safe to serve from the app's own host.
+  public async getThumbnailFile(publicId: string): Promise<IPreviewFile | null> {
+    const site = await this.getSite(publicId);
+    if (!site) return null;
+    const file = await this.getThumbnail(site);
+    return file?.status === 200 ? file : null;
+  }
+
   // Fills the cache from a conversion's files while they are still on disk,
   // so its first preview doesn't wait on GitHub. Called once both branches
   // are pushed, before the conversion is marked ready.
