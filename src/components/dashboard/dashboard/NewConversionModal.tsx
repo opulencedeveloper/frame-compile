@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useCallback, useEffect, useId } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/shared/Modal";
@@ -23,14 +23,16 @@ export default function NewConversionModal() {
   const { isOpen, url } = useSelector((state: RootState) => state.conversions.newConversion);
   const { conversion, start, load, reset, isStarting, error } = useConversion();
 
-  useEffect(() => {
-    if (conversion?.status === ConversionStatus.Ready) router.push(`/${conversion.id}`);
-  }, [conversion, router]);
-
-  const close = () => {
+  const close = useCallback(() => {
     reset();
     dispatch(conversionsActions.closeNewConversion());
-  };
+  }, [dispatch, reset]);
+
+  useEffect(() => {
+    if (conversion?.status !== ConversionStatus.Ready) return;
+    close();
+    router.push(`/${conversion.id}`);
+  }, [close, conversion, router]);
 
   return (
     <Modal isOpen={isOpen} onClose={close} aria-labelledby={titleId} className="max-w-116">

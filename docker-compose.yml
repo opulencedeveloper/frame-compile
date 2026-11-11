@@ -1,0 +1,27 @@
+# Runs the production image locally: docker compose up --build
+# Reads the same variables as `npm run dev`, from .env.local.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+      # The image ships its own Chromium; a path from a Mac's .env.local
+      # would point at nothing inside the container.
+      - BROWSER_EXECUTABLE_PATH=
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

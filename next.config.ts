@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: "standalone",
+  outputFileTracingIncludes: {
+    "/*": ["node_modules/playwright-core/**/*"],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

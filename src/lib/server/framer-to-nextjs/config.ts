@@ -100,6 +100,9 @@ const framerConfig = {
       "--proxy-server=http://framecompile-no-network.invalid:1",
       "--proxy-bypass-list=<-loopback>",
       "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+      // Containers give /dev/shm 64 MB, too little for Chromium on large
+      // pages; this makes it use /tmp instead.
+      "--disable-dev-shm-usage",
     ],
   },
   // The Next.js project a capture is written as.
