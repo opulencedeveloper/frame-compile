@@ -75,6 +75,11 @@ export interface RequestErrorsState {
   retryCount: number;
 }
 
+export interface AppLogoProps {
+  // Where clicking the logo goes; the home page unless given.
+  href?: string;
+}
+
 export interface ClassNameProps {
   className?: string;
 }

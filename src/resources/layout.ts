@@ -4,8 +4,8 @@ import { LEGAL_ROUTES } from "@/constants/legal";
 export const footerLinks: FooterLinkItem[] = [
   {
     label: "Contact",
-    text: "covert2code@gmail.com",
-    href: "mailto:covert2code@gmail.com",
+    text: "framecompile@gmail.com",
+    href: "mailto:framecompile@gmail.com",
   },
   {
     label: "Last updated: July 2026",

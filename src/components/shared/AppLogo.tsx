@@ -1,13 +1,15 @@
+import Link from "next/link";
 import Logo from "@/assets/logo/logo.svg";
 import SmartImage from "@/components/shared/SmartImage";
+import { AppLogoProps } from "@/types/shared";
 
-export default function AppLogo() {
+export default function AppLogo({ href = "/" }: AppLogoProps) {
   return (
-    <div className="flex gap-1.25">
+    <Link href={href} className="flex w-max gap-1.25">
       <div className="h-5 w-5">
         <SmartImage
           src={Logo}
-          alt="Logo"
+          alt=""
           width={20}
           height={20}
           preload={true}
@@ -15,6 +17,6 @@ export default function AppLogo() {
         />
       </div>
       <p className="text-base">FrameCompile</p>
-    </div>
+    </Link>
   );
 }

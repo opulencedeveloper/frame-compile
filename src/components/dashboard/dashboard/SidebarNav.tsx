@@ -2,6 +2,7 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import AppLogo from "@/components/shared/AppLogo";
+import { DASHBOARD_ROUTE } from "@/constants/auth";
 import Button from "@/components/shared/Button";
 import Shimmer from "@/components/shared/Shimmer";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ export function SidebarNav() {
 
   return (
     <>
-      <AppLogo />
+      <AppLogo href={DASHBOARD_ROUTE} />
       <div className="mt-5">
         <p className="uppercase text-xs font-nunito-600 text-c666666b2">
           workspace
