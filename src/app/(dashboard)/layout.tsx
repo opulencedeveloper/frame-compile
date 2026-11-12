@@ -1,3 +1,5 @@
+import RequestErrorModal from "@/components/shared/RequestErrorModal";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -6,6 +8,7 @@ export default function DashboardLayout({
   return (
     <main data-fixed-viewport className="h-dvh overflow-hidden">
       {children}
+      <RequestErrorModal />
     </main>
   );
 }

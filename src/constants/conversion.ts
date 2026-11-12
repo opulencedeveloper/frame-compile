@@ -21,5 +21,8 @@ export const CONVERSION_POLL_INTERVAL_MS = 2000;
 // The dashboard checks on conversions still running less often.
 export const CONVERSION_LIST_POLL_INTERVAL_MS = 5000;
 
+// Placeholder cards shown while the dashboard's sites load.
+export const SKELETON_CARDS = 4;
+
 // Typing in the dashboard's search waits this long before asking the API.
 export const CONVERSION_SEARCH_DEBOUNCE_MS = 300;

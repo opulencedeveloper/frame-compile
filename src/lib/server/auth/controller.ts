@@ -351,6 +351,19 @@ class AuthController {
     });
   }
 
+  // Sessions are stateless JWTs, so signing out removes the cookie. Works
+  // without a valid session, so an expired one can still be cleared.
+  public logout() {
+    const response = utils.customResponse({
+      status: 200,
+      message: MessageResponse.Success,
+      description: "Signed out.",
+      data: null,
+    });
+    auth.clearSessionCookie(response);
+    return response;
+  }
+
   private signUpConsent(marketingOptIn: boolean): ISignUpConsent {
     const now = new Date();
     return {

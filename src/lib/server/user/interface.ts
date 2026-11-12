@@ -48,6 +48,13 @@ export interface IUser {
 
 export type UserDocument = HydratedDocument<IUser>;
 
+// What the API returns for the signed-in user.
+export interface IUserProfileDto {
+  // The name from Google, or the part of the email before "@".
+  name: string;
+  email: string;
+}
+
 export type GoogleUserLookup =
   | { status: GoogleUserStatus.Found; user: UserDocument }
   | { status: GoogleUserStatus.NotFound | GoogleUserStatus.Conflict };

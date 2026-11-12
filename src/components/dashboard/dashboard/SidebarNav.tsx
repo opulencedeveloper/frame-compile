@@ -3,6 +3,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import AppLogo from "@/components/shared/AppLogo";
 import Button from "@/components/shared/Button";
+import Shimmer from "@/components/shared/Shimmer";
 import { cn } from "@/lib/utils";
 import { sidebarFilterItems } from "@/resources/dashboard";
 import { AppDispatch, RootState } from "@/store/redux";
@@ -36,9 +37,11 @@ export function SidebarNav() {
                 )}
               >
                 <span className="text-sm">{item.label}</span>
-                <span className="text-xs font-nunito-400 text-c666666">
-                  {counts ? counts[item.count] : ""}
-                </span>
+                {counts ? (
+                  <span className="text-xs font-nunito-400 text-c666666">{counts[item.count]}</span>
+                ) : (
+                  <Shimmer className="h-3 w-4" />
+                )}
               </Button>
             );
           })}

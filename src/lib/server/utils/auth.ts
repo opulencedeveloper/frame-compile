@@ -84,6 +84,17 @@ class Auth {
     );
   }
 
+  // Same attributes as when it was set, so the browser replaces that cookie.
+  public clearSessionCookie(response: NextResponse) {
+    response.cookies.set(CookieNames.UserAuthToken, "", {
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  }
+
   // Async scrypt keeps hashing off the event loop, unlike pbkdf2Sync.
   // The parameters are stored with the hash so they can be raised later
   // without invalidating existing passwords.

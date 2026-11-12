@@ -41,12 +41,38 @@ export interface DropdownInputProps {
   "aria-label"?: string;
 }
 
+// Where a dropdown's list opens, in viewport pixels: under its trigger, at
+// least as wide, and kept inside the window. It lines up with the trigger's
+// left edge, or its right edge (growing leftwards) when that side has more room.
+export interface ListboxPosition {
+  top: number;
+  left?: number;
+  right?: number;
+  minWidth: number;
+  maxWidth: number;
+  maxHeight: number;
+}
+
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
   "aria-labelledby": string;
   className?: string;
+}
+
+// Open while message is set; the only way out is retrying.
+export interface ErrorModalProps {
+  message: string | null;
+  onRetry: () => void;
+}
+
+// Failed requests shown in the page's one error modal.
+export interface RequestErrorsState {
+  // Each failed request's message, by the id of the hook that sent it.
+  errors: Record<string, string>;
+  // Raised by "Try again"; every failed request retries when it changes.
+  retryCount: number;
 }
 
 export interface ClassNameProps {

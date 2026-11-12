@@ -1,9 +1,11 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import conversionsReducer from "./conversions-slice";
+import requestErrorsReducer from "./request-errors-slice";
 
 // Nothing is persisted: every slice is loaded fresh from the API.
 const rootReducer = combineReducers({
   conversions: conversionsReducer.reducer,
+  requestErrors: requestErrorsReducer.reducer,
 });
 
 // A new store per browser tab (see ClientProvider), not one per module: on

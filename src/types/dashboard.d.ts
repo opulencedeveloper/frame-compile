@@ -11,10 +11,29 @@ export interface HamburgerButtonProps {
   "aria-controls": string;
 }
 
+// The signed-in user, as /users/me returns them.
+export interface UserProfile {
+  name: string;
+  email: string;
+}
+
+export interface LogoutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 export interface ActionMenuItem {
   label: string;
   value: string;
   variant?: MenuItemVariant;
+}
+
+// Where an action menu opens, in viewport pixels: below its button, or
+// above it when there's no room below.
+export interface MenuPosition {
+  top: number;
+  right: number;
+  opensUp: boolean;
 }
 
 export interface ActionMenuProps {

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { unstable_rethrow } from "next/navigation";
 import { after, NextRequest, NextResponse } from "next/server";
 import { MessageResponse } from "./enum";
@@ -33,6 +34,15 @@ class Utils {
 
         if (onError) return onError();
 
+        if (this.isDatabaseUnreachable(error)) {
+          return this.customResponse({
+            status: 503,
+            message: MessageResponse.Error,
+            description: "We're having trouble connecting right now. Please try again in a moment.",
+            data: null,
+          });
+        }
+
         return this.customResponse({
           status: 500,
           message: MessageResponse.Error,
@@ -41,6 +51,16 @@ class Utils {
         });
       }
     };
+  }
+
+  // MongoDB couldn't be reached (DNS, network or no server answering), as
+  // opposed to a bug: worth telling the user to retry.
+  private isDatabaseUnreachable(error: unknown) {
+    return (
+      error instanceof mongoose.mongo.MongoNetworkError ||
+      error instanceof mongoose.mongo.MongoServerSelectionError ||
+      error instanceof mongoose.Error.MongooseServerSelectionError
+    );
   }
 
   // The background counterpart of withErrorHandling. Work scheduled with

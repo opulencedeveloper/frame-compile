@@ -5,14 +5,16 @@ import { useDispatch, useSelector } from "react-redux";
 import Input from "@/components/shared/Input";
 import Button from "@/components/shared/Button";
 import DropdownInput from "@/components/shared/DropdownInput";
-import AuthFormError from "@/components/auth/AuthFormError";
 import { useConversions } from "@/hooks/useConversions";
+import { useRequestError } from "@/hooks/useRequestError";
+import { SKELETON_CARDS } from "@/constants/conversion";
 import { conversionListContent, siteFilterOptions } from "@/resources/dashboard";
 import { AppDispatch, RootState } from "@/store/redux";
 import { conversionsActions } from "@/store/redux/conversions-slice";
 import { Conversion } from "@/types/conversion";
 import { SiteFilter } from "@/utils/enum";
 import ContentCard from "./ContentCard";
+import ContentCardSkeleton from "./ContentCardSkeleton";
 import ConvertFromQuery from "./ConvertFromQuery";
 import DeleteConversionModal from "./DeleteConversionModal";
 import NewConvertButton from "./NewConvertButton";
@@ -20,12 +22,12 @@ import NewConvertButton from "./NewConvertButton";
 export default function ConversionsBoard() {
   const dispatch = useDispatch<AppDispatch>();
   const { conversions, hasLoaded, filter, search } = useSelector((state: RootState) => state.conversions);
-  const { isLoading, error, hasMore, loadMore } = useConversions();
+  const { isLoadingPage, isLoadingMore, error, retry, hasMore, loadMore } = useConversions();
   const [deleting, setDeleting] = useState<Conversion | null>(null);
+  const showSkeletons = !hasLoaded || isLoadingPage;
+  useRequestError(error, retry);
 
-  const emptyMessage = !hasLoaded
-    ? conversionListContent.loading
-    : search.trim()
+  const emptyMessage = search.trim()
       ? conversionListContent.noMatches
       : filter === SiteFilter.Deployed
         ? conversionListContent.noDeployed
@@ -56,10 +58,18 @@ export default function ConversionsBoard() {
         <NewConvertButton />
       </div>
 
-      <AuthFormError message={error} />
-
       <div className="flex-1 min-h-0 w-full pb-20 overflow-y-auto scrollbar-hidden">
-        {conversions.length > 0 ? (
+        {showSkeletons ? (
+          <div
+            role="status"
+            aria-label={conversionListContent.loading}
+            className="grid grid-cols-1 lg:grid-cols-2 content-start gap-x-5 gap-y-6 md:gap-y-8"
+          >
+            {Array.from({ length: SKELETON_CARDS }, (_, index) => (
+              <ContentCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : conversions.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 content-start gap-x-5 gap-y-6 md:gap-y-8">
             {conversions.map((conversion) => (
               <ContentCard key={conversion.id} conversion={conversion} onDelete={setDeleting} />
@@ -71,11 +81,11 @@ export default function ConversionsBoard() {
           </p>
         )}
 
-        {hasMore && (
+        {hasMore && !showSkeletons && (
           <Button
             onClick={loadMore}
-            disabled={isLoading}
-            aria-busy={isLoading}
+            disabled={isLoadingMore}
+            aria-busy={isLoadingMore}
             className="rounded-lg max-w-40 mx-auto mt-8 flex bg-cdcdce1 text-c0a0a0a"
           >
             {conversionListContent.loadMore}

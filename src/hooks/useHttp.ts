@@ -59,11 +59,11 @@ export const useHttp = () => {
 
         let errorMessage = "Something went wrong!";
 
-        if (error?.code === "ERR_NETWORK") {
+        // A request that fails or times out is almost always a bad
+        // connection, so both say so.
+        if (error?.code === "ERR_NETWORK" || error?.code === "ECONNABORTED") {
           errorMessage =
             "Network error. Please check your internet connection.";
-        } else if (error?.code === "ECONNABORTED") {
-          errorMessage = "Request timed out. Please try again.";
         } else if (error?.response?.data?.description) {
           errorMessage = error?.response?.data?.description;
         }

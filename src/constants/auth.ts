@@ -10,6 +10,8 @@ export const AUTH_KEYS = {
 // Where signed-in users work. Matches config.app.afterLoginPath on the server.
 export const DASHBOARD_ROUTE = "/dashboard";
 
+export const SIGN_IN_ROUTE = "/sign-in";
+
 export const AUTH_ROUTES = {
   GOOGLE: "/api/v1/auth/google",
 } as const;
@@ -20,6 +22,7 @@ export const AUTH_API = {
   LOGIN: "/auth/login",
   VERIFY_EMAIL: "/auth/verify-email",
   RESEND_OTP: "/auth/resend-otp",
+  LOGOUT: "/auth/logout",
 } as const;
 
 export const AUTH_RULES = {

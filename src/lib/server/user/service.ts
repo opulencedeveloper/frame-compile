@@ -15,6 +15,11 @@ class UserService {
     return User.findOne({ googleId });
   }
 
+  // For a signed-in user, whose account exists.
+  async getUserById(userId: string): Promise<UserDocument> {
+    return User.findById(userId).orFail();
+  }
+
   async findUserByEmail(email: string): Promise<UserDocument | null> {
     return User.findOne({ email: email.toLowerCase() });
   }

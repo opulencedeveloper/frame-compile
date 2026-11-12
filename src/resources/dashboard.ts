@@ -41,6 +41,18 @@ export const conversionListContent = {
   framework: "Next.js",
 };
 
+export const profileContent = {
+  logout: "Logout",
+  loading: "Loading your profile…",
+};
+
+export const logoutContent = {
+  title: "Log out?",
+  description: "You'll need to sign in again to see your sites.",
+  confirm: "Log out",
+  cancel: "Cancel",
+};
+
 export const deleteConversionContent = {
   title: "Delete this conversion?",
   description: "Its preview and its code will be deleted. This can't be undone.",

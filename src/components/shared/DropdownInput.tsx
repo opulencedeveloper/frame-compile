@@ -1,12 +1,18 @@
 "use client";
 
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useHoverMenu } from "@/hooks/useHoverMenu";
+import { useIsClient } from "@/hooks/useIsClient";
 import SmartImage from "@/components/shared/SmartImage";
 import DropDownIcon from "@/assets/icons/drop-down.svg";
-import { DropdownInputProps } from "@/types/shared";
+import { DropdownInputProps, ListboxPosition } from "@/types/shared";
+
+const LISTBOX_GAP = 6;
+const LISTBOX_MAX_HEIGHT = 240;
+const VIEWPORT_MARGIN = 8;
 
 export default function DropdownInput({
   options,
@@ -22,25 +28,53 @@ export default function DropdownInput({
   const id = useId();
   const listboxId = `${id}-listbox`;
   const optionId = (index: number) => `${id}-option-${index}`;
-  const listboxRef = useRef<HTMLUListElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const shouldReduceMotion = useReducedMotion();
+  const isClient = useIsClient();
 
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [position, setPosition] = useState<ListboxPosition>({ top: 0, left: 0, minWidth: 0, maxWidth: 0, maxHeight: 0 });
 
   const selectedValue = value ?? internalValue;
   const selectedIndex = options.findIndex((option) => option.value === selectedValue);
   const selectedOption = options[selectedIndex];
 
-  const { isOpen, open, close, rootProps, triggerProps } = useHoverMenu({
+  const placeListbox = () => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    if (!trigger) return;
+    const top = trigger.bottom + LISTBOX_GAP;
+    const spaceRight = window.innerWidth - trigger.left - VIEWPORT_MARGIN;
+    const spaceLeft = trigger.right - VIEWPORT_MARGIN;
+    const growsLeft = spaceLeft > spaceRight;
+    setPosition({
+      top,
+      ...(growsLeft ? { right: window.innerWidth - trigger.right } : { left: trigger.left }),
+      minWidth: trigger.width,
+      maxWidth: Math.max(spaceLeft, spaceRight),
+      maxHeight: Math.min(LISTBOX_MAX_HEIGHT, window.innerHeight - top - VIEWPORT_MARGIN),
+    });
+  };
+
+  const {
+    isOpen,
+    open,
+    close,
+    rootProps,
+    triggerProps,
+    menuRef: listboxRef,
+  } = useHoverMenu<HTMLUListElement>({
     disabled,
-    onOpen: () => setActiveIndex(Math.max(selectedIndex, 0)),
+    onOpen: () => {
+      placeListbox();
+      setActiveIndex(Math.max(selectedIndex, 0));
+    },
   });
 
   useEffect(() => {
     if (!isOpen || activeIndex < 0) return;
     listboxRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
-  }, [isOpen, activeIndex]);
+  }, [isOpen, activeIndex, listboxRef]);
 
   const select = (index: number) => {
     const option = options[index];
@@ -94,6 +128,7 @@ export default function DropdownInput({
   return (
     <div {...rootProps} className={cn("relative h-10 w-full", className)}>
       <button
+        ref={triggerRef}
         type="button"
         role="combobox"
         aria-label={ariaLabel}
@@ -122,44 +157,48 @@ export default function DropdownInput({
 
       {name && <input type="hidden" name={name} value={selectedValue ?? ""} />}
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.ul
-            ref={listboxRef}
-            id={listboxId}
-            role="listbox"
-            aria-label={ariaLabel}
-            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            style={{ transformOrigin: "top" }}
-            className="absolute left-0 top-full z-20 mt-1.5 max-h-60 w-full min-w-max overflow-y-auto rounded-lg border border-cdcdce1 bg-white p-1 shadow-[0_8px_24px_rgba(10,10,10,0.08)]"
-          >
-            {options.map((option, index) => {
-              const isSelected = option.value === selectedValue;
-              return (
-                <li
-                  key={option.value}
-                  id={optionId(index)}
-                  role="option"
-                  aria-selected={isSelected}
-                  onPointerDown={(event) => event.preventDefault()}
-                  onPointerEnter={() => setActiveIndex(index)}
-                  onClick={() => select(index)}
-                  className={cn(
-                    "flex h-8.5 cursor-pointer items-center rounded-md px-2.5 text-sm transition-colors",
-                    index === activeIndex && "bg-cf4f4f6",
-                    isSelected ? "font-nunito-500 text-c0a0a0a" : "font-nunito-400 text-c0a0a0a80",
-                  )}
-                >
-                  {option.label}
-                </li>
-              );
-            })}
-          </motion.ul>
+      {isClient &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <motion.ul
+                ref={listboxRef}
+                id={listboxId}
+                role="listbox"
+                aria-label={ariaLabel}
+                initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: "easeOut" }}
+                style={{ ...position, transformOrigin: position.right === undefined ? "top left" : "top right" }}
+                className="fixed z-30 w-max overflow-y-auto rounded-lg border border-cdcdce1 bg-white p-1 shadow-[0_8px_24px_rgba(10,10,10,0.08)]"
+              >
+                {options.map((option, index) => {
+                  const isSelected = option.value === selectedValue;
+                  return (
+                    <li
+                      key={option.value}
+                      id={optionId(index)}
+                      role="option"
+                      aria-selected={isSelected}
+                      onPointerDown={(event) => event.preventDefault()}
+                      onPointerEnter={() => setActiveIndex(index)}
+                      onClick={() => select(index)}
+                      className={cn(
+                        "flex h-8.5 cursor-pointer items-center rounded-md px-2.5 text-sm whitespace-nowrap transition-colors",
+                        index === activeIndex && "bg-cf4f4f6",
+                        isSelected ? "font-nunito-500 text-c0a0a0a" : "font-nunito-400 text-c0a0a0a80",
+                      )}
+                    >
+                      {option.label}
+                    </li>
+                  );
+                })}
+              </motion.ul>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   );
 }

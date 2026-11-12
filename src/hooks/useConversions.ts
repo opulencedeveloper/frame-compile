@@ -18,7 +18,10 @@ import { isConversionBusy } from "@/utils/conversion";
 export const useConversions = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { conversions, nextCursor, filter, search } = useSelector((state: RootState) => state.conversions);
-  const { isLoading, error, sendHttpRequest } = useHttp();
+  const pageRequest = useHttp();
+  const moreRequest = useHttp();
+  const { sendHttpRequest } = pageRequest;
+  const { sendHttpRequest: sendMore } = moreRequest;
   const { sendHttpRequest: sendRefresh } = useHttp();
   const [query, setQuery] = useState(search.trim());
   // Only the latest request's answer is kept, whatever order they arrive in.
@@ -49,7 +52,7 @@ export const useConversions = () => {
   const loadMore = useCallback(() => {
     if (!nextCursor) return;
     const request = latestRequest.current;
-    sendHttpRequest({
+    sendMore({
       requestConfig: { url: CONVERSION_API.LIST, method: "GET", params: params(nextCursor) },
       successRes: (res) => {
         if (request === latestRequest.current) {
@@ -57,7 +60,13 @@ export const useConversions = () => {
         }
       },
     });
-  }, [dispatch, nextCursor, params, sendHttpRequest]);
+  }, [dispatch, nextCursor, params, sendMore]);
+
+  // Repeats whichever request failed: the first page, or the next one.
+  const retry = useCallback(() => {
+    if (pageRequest.error) refresh();
+    else loadMore();
+  }, [pageRequest.error, refresh, loadMore]);
 
   useEffect(() => {
     refresh();
@@ -74,5 +83,12 @@ export const useConversions = () => {
     return () => window.clearTimeout(timer);
   }, [conversions, dispatch, params, sendRefresh]);
 
-  return { isLoading, error, hasMore: nextCursor !== null, loadMore };
+  return {
+    isLoadingPage: pageRequest.isLoading,
+    isLoadingMore: moreRequest.isLoading,
+    error: pageRequest.error ?? moreRequest.error,
+    retry,
+    hasMore: nextCursor !== null,
+    loadMore,
+  };
 };

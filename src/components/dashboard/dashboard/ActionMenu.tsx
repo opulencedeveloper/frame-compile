@@ -1,11 +1,17 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useId, useRef } from "react";
+import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useHoverMenu } from "@/hooks/useHoverMenu";
-import { ActionMenuProps } from "@/types/dashboard";
+import { useIsClient } from "@/hooks/useIsClient";
+import { ActionMenuProps, MenuPosition } from "@/types/dashboard";
 import { MenuItemVariant } from "@/utils/enum";
+
+const MENU_ITEM_HEIGHT = 32;
+const MENU_PADDING = 8;
+const MENU_GAP = 4;
 
 export default function ActionMenu({
   items,
@@ -20,13 +26,39 @@ export default function ActionMenu({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const pendingFocusRef = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
-  const { isOpen, open, close, rootProps, triggerProps } = useHoverMenu();
+  const isClient = useIsClient();
+  const [position, setPosition] = useState<MenuPosition>({
+    top: 0,
+    right: 0,
+    opensUp: false,
+  });
+
+  const placeMenu = () => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    if (!trigger) return;
+    const height = items.length * MENU_ITEM_HEIGHT + MENU_PADDING;
+    const opensUp =
+      trigger.bottom + MENU_GAP + height > window.innerHeight &&
+      trigger.top > height + MENU_GAP;
+    setPosition({
+      top: opensUp
+        ? trigger.top - MENU_GAP - height
+        : trigger.bottom + MENU_GAP,
+      right: window.innerWidth - trigger.right,
+      opensUp,
+    });
+  };
+
+  const { isOpen, open, close, rootProps, triggerProps, menuRef } =
+    useHoverMenu({ onOpen: placeMenu });
 
   useEffect(() => {
     if (!isOpen || pendingFocusRef.current === null) return;
     itemRefs.current[pendingFocusRef.current]?.focus();
     pendingFocusRef.current = null;
   }, [isOpen]);
+
+  const hiddenY = position.opensUp ? 6 : -6;
 
   const openWithFocus = (index: number) => {
     pendingFocusRef.current = index;
@@ -58,7 +90,9 @@ export default function ActionMenu({
   };
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const current = itemRefs.current.findIndex((item) => item === document.activeElement);
+    const current = itemRefs.current.findIndex(
+      (item) => item === document.activeElement,
+    );
     const focusItem = (index: number) => itemRefs.current[index]?.focus();
 
     switch (event.key) {
@@ -107,42 +141,63 @@ export default function ActionMenu({
         {children}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            id={menuId}
-            role="menu"
-            aria-label={ariaLabel}
-            onKeyDown={handleMenuKeyDown}
-            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.96 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            style={{ transformOrigin: "top right" }}
-            className="absolute right-0 top-full z-20 mt-1 flex w-31 flex-col rounded-xl bg-white p-1 shadow-action-menu"
-          >
-            {items.map((item, index) => (
-              <button
-                key={item.value}
-                ref={(element) => {
-                  itemRefs.current[index] = element;
+      {isClient &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                ref={menuRef}
+                id={menuId}
+                role="menu"
+                aria-label={ariaLabel}
+                onKeyDown={handleMenuKeyDown}
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: hiddenY, scale: 0.96 }
+                }
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: hiddenY, scale: 0.96 }
+                }
+                transition={{ duration: 0.16, ease: "easeOut" }}
+                style={{
+                  top: position.top,
+                  right: position.right,
+                  transformOrigin: position.opensUp
+                    ? "bottom right"
+                    : "top right",
                 }}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                onClick={() => handleSelect(item.value)}
-                onPointerEnter={(event) => event.currentTarget.focus()}
-                className={cn(
-                  "flex h-8 w-full items-center rounded-lg px-3 text-left text-sm font-nunito-400 outline-none transition-colors hover:bg-cf4f4f6 focus:bg-cf4f4f6",
-                  item.variant === MenuItemVariant.Danger ? "text-cff383c" : "text-c282828",
-                )}
+                className="fixed z-30 flex w-31 flex-col rounded-xl bg-white p-1 shadow-action-menu"
               >
-                {item.label}
-              </button>
-            ))}
-          </motion.div>
+                {items.map((item, index) => (
+                  <button
+                    key={item.value}
+                    ref={(element) => {
+                      itemRefs.current[index] = element;
+                    }}
+                    type="button"
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => handleSelect(item.value)}
+                    onPointerEnter={(event) => event.currentTarget.focus()}
+                    className={cn(
+                      "flex h-8 w-full items-center rounded-lg px-3 text-left text-sm font-nunito-400 outline-none transition-colors hover:bg-cf4f4f6 focus:bg-cf4f4f6",
+                      item.variant === MenuItemVariant.Danger
+                        ? "text-cff383c"
+                        : "text-c282828",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   );
 }
