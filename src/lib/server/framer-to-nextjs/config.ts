@@ -105,20 +105,32 @@ const framerConfig = {
       "--disable-dev-shm-usage",
     ],
   },
-  // The Next.js project a capture is written as.
+  // The Next.js project a capture is written as. Laid out the way a Next.js
+  // developer expects: all source under src/, routes in src/app.
   project: {
     // Mirrored files are served from public/.
     publicDir: "public/",
     // Each page's HTML without its content (head, Framer's scripts), with
     // a marker where the rendered content goes.
-    shellsDir: "site/shells/",
-    manifestFile: "site/site.json",
+    shellsDir: "src/site/shells/",
+    manifestFile: "src/site/site.json",
+    // Where components are written (see jsx-files.ts).
+    viewsDir: "src/views/",
+    layoutDir: "src/components/layout/",
+    sharedDir: "src/components/shared/",
+    sectionsDir: "src/components/sections/",
+    graphicsDir: "src/components/graphics/",
+    // Shared sections with these names are the site's frame (navigation,
+    // header, footer and their breakpoint variants), kept in layoutDir.
+    layoutComponentName: /^(?:Navigation|Header|Footer)(?:[A-Z]\w*)?$/,
     // Exact versions, so every generated project builds the same way.
     dependencies: { next: "16.4.3", react: "19.3.0", "react-dom": "19.3.0" },
     devDependencies: {
       "@types/node": "20.19.43",
       "@types/react": "19.3.0",
       "@types/react-dom": "19.3.0",
+      eslint: "9.39.5",
+      "eslint-config-next": "16.4.3",
       typescript: "5.9.3",
     },
     nodeVersion: ">=20.9.0",
@@ -145,7 +157,8 @@ const framerConfig = {
     // <template data-framecompile-raw=""> holding the markers and the HTML,
     // then unwrapped to the HTML alone.
     rawAttribute: "data-framecompile-raw",
-    rawHtmlImport: "@/components/RawHtml",
+    rawHtmlImport: "@/components/ui/RawHtml",
+    rawHtmlFile: "src/components/ui/RawHtml.tsx",
     rawMarkerOpen: "<!--framecompile:raw-->",
     rawMarkerClose: "<!--/framecompile:raw-->",
     // React writes this between adjacent text nodes; Framer's HTML has none.

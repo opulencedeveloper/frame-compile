@@ -51,6 +51,14 @@ export enum JsxComponentKind {
   Graphic = "graphic",
 }
 
+// The TypeScript type of a generated component's prop.
+export enum JsxParamType {
+  // className and other attributes.
+  String = "string",
+  // An inline style object (React's CSSProperties).
+  Style = "style",
+}
+
 export enum MirroredFileKind {
   // Scanned for references and rewritten.
   Text = "text",

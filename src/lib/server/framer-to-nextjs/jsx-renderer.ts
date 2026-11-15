@@ -73,10 +73,13 @@ class JsxRenderer {
     }
   }
 
+  // Pages are verified before components get params, so every value here
+  // is a literal.
   private propValue(value: JsxPropValue) {
     if (value === true || typeof value === "string") return value;
     if ("style" in value) return Object.fromEntries(value.style);
-    return { __html: value.html };
+    if ("html" in value) return { __html: value.html };
+    throw new Error(`Unresolved component prop: ${value.param}`);
   }
 
   // Walks both trees together. Where they first differ, the original

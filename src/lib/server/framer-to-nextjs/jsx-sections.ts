@@ -29,7 +29,7 @@ class JsxSections {
     return {
       kind: JsxComponentKind.View,
       name: viewName,
-      root: this.extractGraphics(withSections, null),
+      root: this.extractGraphics(withSections, null, this.contextName(viewName)),
     };
   }
 
@@ -48,7 +48,7 @@ class JsxSections {
       const nodeHidden = new Set([...hidden, ...this.hiddenBreakpoints(node)]);
       if (this.isSection(node)) {
         const name = this.uniqueName(`${this.baseName(node)}${this.breakpointSuffix(nodeHidden, context)}`, context.names);
-        const section = this.extractGraphics(node, null);
+        const section = this.extractGraphics(node, null, this.contextName(name));
         return {
           kind: JsxNodeKind.Component,
           component: { kind: JsxComponentKind.Section, name, root: section },
@@ -59,27 +59,50 @@ class JsxSections {
     });
   }
 
-  // Large inline SVGs become graphics, named after their own layer or their
-  // parent's (`parentName`).
-  private extractGraphics(node: IJsxNode, parentName: string | null): IJsxNode {
+  // Large inline SVGs become graphics, named after their own layer, the
+  // SVG's title, their parent's layer (`parentName`), or else the component
+  // they are in (`contextName`): "ExperienceGraphic", never just "Graphic".
+  private extractGraphics(node: IJsxNode, parentName: string | null, contextName: string): IJsxNode {
     if (node.kind === JsxNodeKind.Suspense) {
-      return { ...node, children: node.children.map((child) => this.extractGraphics(child, parentName)) };
+      return {
+        ...node,
+        children: node.children.map((child) => this.extractGraphics(child, parentName, contextName)),
+      };
     }
     if (node.kind !== JsxNodeKind.Element) return node;
 
     const ownName = this.layerName(node);
     if (node.tag === "svg" && pageDocument.sizeOf(node.source) >= settings.graphicMinChars) {
-      const name = ownName ?? parentName;
+      const name = ownName ?? this.svgTitle(node) ?? parentName ?? contextName;
       return {
         kind: JsxNodeKind.Component,
         component: {
           kind: JsxComponentKind.Graphic,
-          name: `${name ? this.pascal(name) : ""}Graphic`,
+          name: `${this.pascal(name)}Graphic`,
           root: node,
         },
       };
     }
-    return { ...node, children: node.children.map((child) => this.extractGraphics(child, ownName)) };
+    return {
+      ...node,
+      children: node.children.map((child) => this.extractGraphics(child, ownName, contextName)),
+    };
+  }
+
+  // What an SVG says it shows: its aria-label, or its <title>.
+  private svgTitle(svg: IJsxElement): string | null {
+    const label = svg.props.find((prop) => prop.name === "aria-label")?.value;
+    if (typeof label === "string" && label.trim()) return label.trim();
+    const title = svg.children.find(
+      (child): child is IJsxElement => child.kind === JsxNodeKind.Element && child.tag.toLowerCase() === "title",
+    );
+    const text = title ? this.text(title).trim() : "";
+    return text || null;
+  }
+
+  // "ExperienceSection" -> "Experience", "HomePage" -> "Home".
+  private contextName(componentName: string): string {
+    return componentName.replace(/(?:Section|Page)$/, "") || componentName;
   }
 
   // Semantic elements, layers the designer named, and Framer's component

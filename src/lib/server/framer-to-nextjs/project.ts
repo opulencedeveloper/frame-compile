@@ -28,7 +28,7 @@ const ASSETS_DIR = framerConfig.mirrorPrefix.slice(1);
 // which proved at conversion that this output is Framer's page.
 const RENDER = `import { createElement, type ComponentType } from "react";
 
-// Where the page's content goes in its shell (site/shells).
+// Where the page's content goes in its shell (src/site/shells).
 const MAIN_MARKER = ${JSON.stringify(jsx.mainMarker)};
 // React writes this between adjacent pieces of text; Framer's pages have none.
 const TEXT_SEPARATOR = ${JSON.stringify(jsx.textSeparator)};
@@ -58,7 +58,7 @@ export async function renderPage(shell: string, View: ComponentType | null): Pro
 `;
 
 const RAW_HTML = `// HTML kept exactly as Framer published it, where JSX couldn't reproduce it
-// identically. src/render.ts unwraps it, so only the HTML reaches the page.
+// identically. src/lib/render.ts unwraps it, so only the HTML reaches the page.
 export default function RawHtml({ html }: { html: string }) {
   return (
     <template
@@ -74,6 +74,9 @@ export default function RawHtml({ html }: { html: string }) {
 // correctly; these declarations stop TypeScript rejecting them.
 const FRAMER_TYPES = `import "react";
 
+// Extending React's interfaces means repeating their type parameter (T),
+// even where it isn't used.
+/* eslint-disable @typescript-eslint/no-unused-vars */
 declare module "react" {
   interface CSSProperties {
     [property: string]: string | number | undefined;
@@ -89,13 +92,13 @@ declare module "react" {
 
 const ROUTE_HANDLER = `import { readFile } from "node:fs/promises";
 import path from "node:path";
-import site from "../../site/site.json";
-import { renderPage } from "@/render";
-import { configuredSiteUrl } from "@/site-url";
+import { renderPage } from "@/lib/render";
+import { configuredSiteUrl } from "@/lib/site-url";
+import site from "@/site/site.json";
 import { views } from "@/views";
 
 // Every page of the site: its view (src/views) rendered into its shell
-// (site/shells). In development each request renders again, so edits show
+// (src/site/shells). In development each request renders again, so edits show
 // on refresh; \`next build\` renders every page once, as static HTML.
 
 type Page = (typeof site.pages)[number];
@@ -104,7 +107,7 @@ interface PageContext {
   params: Promise<{ path?: string[] }>;
 }
 
-const shellsDirectory = path.join(process.cwd(), "site", "shells");
+const shellsDirectory = path.join(process.cwd(), "src", "site", "shells");
 const pagesByRoute = new Map<string, Page>(
   site.pages.map((page) => [decodeRoute(page.route), page]),
 );
@@ -191,10 +194,10 @@ export async function siteOrigin(): Promise<string> {
 `;
 
 const SITEMAP = `import type { MetadataRoute } from "next";
-import site from "../site/site.json";
-import { siteOrigin } from "@/site-url";
+import { siteOrigin } from "@/lib/site-url";
+import site from "@/site/site.json";
 
-// Every page, at the site's own address. Built from site/site.json, so it
+// Every page, at the site's own address. Built from src/site/site.json, so it
 // lists exactly the routes this project serves.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = await siteOrigin();
@@ -205,8 +208,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 `;
 
 const ROBOTS = `import type { MetadataRoute } from "next";
-import site from "../site/site.json";
-import { siteOrigin } from "@/site-url";
+import { siteOrigin } from "@/lib/site-url";
+import site from "@/site/site.json";
 
 // The rules the site had on Framer, so a site that kept crawlers out still
 // does, pointing them at this site's sitemap.
@@ -220,7 +223,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 `;
 
 const NEXT_CONFIG = `import type { NextConfig } from "next";
-import site from "./site/site.json";
+import site from "./src/site/site.json";
 
 // Header sources use path-to-regexp syntax; file names are matched literally.
 const literalSource = (path: string) => path.replace(/[\\\\:()[\\]{}*+?!]/g, "\\\\$&");
@@ -230,7 +233,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The route handler reads the page shells at request time (the 404 page),
   // so they must be part of the deployment.
-  outputFileTracingIncludes: { "/[[...path]]": ["./site/shells/**/*"] },
+  outputFileTracingIncludes: { "/[[...path]]": ["./src/site/shells/**/*"] },
   async headers() {
     return [
       // Framer's file names change whenever their content does.
@@ -285,8 +288,36 @@ const GITIGNORE = `/node_modules
 next-env.d.ts
 *.tsbuildinfo
 .env*
+!.env.example
 .vercel
 .DS_Store
+`;
+
+// Next.js's recommended rules. public/ holds Framer's own compiled scripts,
+// which aren't this project's source.
+const ESLINT_CONFIG = `import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+export default defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  {
+    rules: {
+      // Images keep the exact markup Framer published (srcset, sizes,
+      // loading), which its runtime hydrates; next/image would change it.
+      "@next/next/no-img-element": "off",
+    },
+  },
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "public/**"]),
+]);
+`;
+
+const ENV_EXAMPLE = `# The address the site is served at, e.g. https://your-domain.com.
+# Used for canonical links, social preview images, /sitemap.xml and
+# /robots.txt. Set it where the site is built: pages are rendered at build
+# time. On Vercel the production domain is used when it isn't set.
+SITE_URL=
 `;
 
 // One project being written. Pages arrive while the site is captured and
@@ -357,7 +388,7 @@ class NextProjectWriter {
     const files: Record<string, string> = Object.fromEntries(
       componentFiles.map((file) => [file.path, file.source]),
     );
-    if (jsxFiles.usesRawHtml(componentFiles)) files["src/components/RawHtml.tsx"] = RAW_HTML;
+    if (jsxFiles.usesRawHtml(componentFiles)) files[jsx.rawHtmlFile] = RAW_HTML;
 
     const manifest: IProjectManifest = {
       sourceOrigin: source.origin,
@@ -367,16 +398,18 @@ class NextProjectWriter {
     };
     Object.assign(files, {
       [settings.manifestFile]: this.json(manifest),
-      "src/views/index.ts": this.viewsIndex(views),
-      "src/render.ts": RENDER,
-      "src/site-url.ts": SITE_URL,
-      "app/sitemap.ts": SITEMAP,
-      "app/robots.ts": ROBOTS,
+      [`${settings.viewsDir}index.ts`]: this.viewsIndex(views),
+      "src/lib/render.ts": RENDER,
+      "src/lib/site-url.ts": SITE_URL,
+      "src/app/[[...path]]/route.ts": ROUTE_HANDLER,
+      "src/app/sitemap.ts": SITEMAP,
+      "src/app/robots.ts": ROBOTS,
       "src/types/framer.d.ts": FRAMER_TYPES,
-      "app/[[...path]]/route.ts": ROUTE_HANDLER,
       "next.config.ts": NEXT_CONFIG,
       "tsconfig.json": this.json(TSCONFIG),
+      "eslint.config.mjs": ESLINT_CONFIG,
       "package.json": this.json(this.packageJson(source)),
+      ".env.example": ENV_EXAMPLE,
       ".gitignore": GITIGNORE,
       "README.md": this.readme(source, result.pages, componentFiles.length),
     });
@@ -423,7 +456,7 @@ class NextProjectWriter {
     const names = views.map(({ component }) => component.name).sort();
     return `${names.map((name) => `import ${name} from "./${name}";`).join("\n")}
 
-// Every page's view, by the name site/site.json gives it.
+// Every page's view, by the name src/site/site.json gives it.
 export const views = {
 ${names.map((name) => `  ${name},`).join("\n")}
 };
@@ -435,7 +468,13 @@ ${names.map((name) => `  ${name},`).join("\n")}
       name: this.packageName(source.hostname),
       version: "1.0.0",
       private: true,
-      scripts: { dev: "next dev", build: "next build", start: "next start" },
+      scripts: {
+        dev: "next dev",
+        build: "next build",
+        start: "next start",
+        lint: "eslint",
+        typecheck: "tsc --noEmit",
+      },
       dependencies: settings.dependencies,
       devDependencies: settings.devDependencies,
       engines: { node: settings.nodeVersion },
@@ -502,32 +541,56 @@ and every file the site loads (scripts, fonts, images, CMS data) is served from
 browser, so it looks and behaves as it does on Framer, without depending on
 Framer's servers.
 
-## Running it
+## Getting started
+
+Requires Node.js 20.9 or later.
 
 \`\`\`bash
 npm install
+cp .env.example .env.local   # then set SITE_URL
 npm run dev
 \`\`\`
 
-Edit any component and refresh to see the change. \`npm run build\` renders
-every page once, as static HTML; \`npm start\` serves the build.
+Open http://localhost:3000. Edit any component and refresh to see the change.
 
-## Layout
+| Command             | What it does                                   |
+| ------------------- | ---------------------------------------------- |
+| \`npm run dev\`       | Development server                             |
+| \`npm run build\`     | Production build: every page rendered once, as static HTML |
+| \`npm start\`         | Serves the production build                    |
+| \`npm run lint\`      | ESLint, with Next.js's recommended rules       |
+| \`npm run typecheck\` | TypeScript, without building                   |
+
+## Project structure
 
 \`\`\`
-src/views/                one component per page
-src/sections/<page>/      the sections only that page has
-src/components/           sections shared by several pages (navigation, footer)
-src/components/graphics/  large inline SVGs
-src/render.ts             renders a view into its page's shell
-site/shells/              each page's HTML around its content: <head>, Framer's scripts
-site/site.json            the routes, their views and status codes
-app/[[...path]]/route.ts  serves the pages (and the 404 page for unknown paths)
-app/sitemap.ts            /sitemap.xml: every page, at the site's own address
-app/robots.ts             /robots.txt: the site's robots rules from Framer
-src/site-url.ts           the site's address (SITE_URL), shared by the above
-public/assets/            everything the pages load, mirrored from Framer
+src/
+  app/
+    [[...path]]/route.ts   serves every page (and the 404 page for unknown paths)
+    sitemap.ts             /sitemap.xml: every page, at the site's own address
+    robots.ts              /robots.txt: the site's robots rules from Framer
+  views/                   one component per page, and index.ts listing them
+  components/
+    layout/                navigation, header and footer shared by several pages
+    shared/                other sections shared by several pages
+    sections/<page>/       the sections only that page has
+    graphics/              large inline SVGs
+    ui/                    small building blocks (RawHtml)
+  lib/
+    render.ts              renders a page's view into its shell
+    site-url.ts            the site's address (SITE_URL)
+  site/
+    site.json              the routes, their views and status codes
+    shells/                each page's HTML around its content: <head>, Framer's scripts
+  types/framer.d.ts        lets TypeScript accept Framer's attributes and CSS
+public/assets/             everything the pages load, mirrored from Framer
 \`\`\`
+
+Pages are served by one route handler rather than a \`page.tsx\` per route:
+Framer's runtime hydrates each page in the browser, and a Next.js page would
+hydrate the same HTML with a second copy of React. The handler renders the
+page's view to HTML on the server, so the components are ordinary React all
+the same.
 
 ## Editing
 
@@ -540,9 +603,11 @@ are load-bearing:
   components, so removing or reordering elements can make it re-render that
   part of the page. Text, classes and styles are safe to change.
 
-The \`<head>\` (title, meta tags) is in each page's shell in \`site/shells\`.
+The \`<head>\` (title, meta tags) is in each page's shell in \`src/site/shells\`.
 
-## Before you deploy: set \`SITE_URL\` where the site is built
+## Deploying
+
+Set \`SITE_URL\` where the site is built (see \`.env.example\`):
 
 \`\`\`bash
 SITE_URL=https://your-domain.com

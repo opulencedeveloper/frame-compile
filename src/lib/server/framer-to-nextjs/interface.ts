@@ -1,5 +1,5 @@
 import { Element } from "domhandler";
-import { CaptureIssueType, JsxComponentKind, JsxNodeKind, MirroredFileKind } from "./enum";
+import { CaptureIssueType, JsxComponentKind, JsxNodeKind, JsxParamType, MirroredFileKind } from "./enum";
 
 // Where a capture writes its output. The paths are relative to the root of
 // the static site, e.g. "index.html" or "assets/framerusercontent.com/x.png".
@@ -69,7 +69,12 @@ export interface IJsxHtmlValue {
   html: string;
 }
 
-export type JsxPropValue = string | true | IJsxStyleValue | IJsxHtmlValue;
+// A value taken from the component's own props, e.g. className={className}.
+export interface IJsxParamValue {
+  param: string;
+}
+
+export type JsxPropValue = string | true | IJsxStyleValue | IJsxHtmlValue | IJsxParamValue;
 
 export interface IJsxProp {
   // The React prop name.
@@ -104,6 +109,8 @@ export interface IJsxRaw {
 export interface IJsxComponentRef {
   kind: JsxNodeKind.Component;
   component: IJsxComponent;
+  // Passed to the component, for its params.
+  props?: IJsxProp[];
 }
 
 export type IJsxNode = IJsxElement | IJsxText | IJsxSuspense | IJsxRaw | IJsxComponentRef;
@@ -112,6 +119,16 @@ export interface IJsxComponent {
   kind: JsxComponentKind;
   name: string;
   root: IJsxNode;
+  // Props the component takes; none for most.
+  params?: IJsxComponentParam[];
+}
+
+// A prop of a generated component: what differs between the places it is
+// used, such as the class Framer gives its container on each page.
+export interface IJsxComponentParam {
+  name: string;
+  type: JsxParamType;
+  optional: boolean;
 }
 
 // A page's HTML, split into its content and the rest.
@@ -135,6 +152,14 @@ export interface IVerifiedJsx {
 export interface IJsxFile {
   path: string;
   source: string;
+}
+
+// A section where it is used: the component, its page, and the node that
+// renders it there.
+export interface ISectionUse {
+  component: IJsxComponent;
+  slug: string;
+  ref: IJsxComponentRef;
 }
 
 // A page's view, and the folder name for its own sections.

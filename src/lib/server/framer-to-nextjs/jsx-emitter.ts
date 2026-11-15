@@ -1,8 +1,9 @@
 import framerConfig from "./config";
-import { JsxNodeKind } from "./enum";
+import { JsxNodeKind, JsxParamType } from "./enum";
 import {
   IComponentImport,
   IJsxComponent,
+  IJsxComponentParam,
   IJsxElement,
   IJsxEmitState,
   IJsxNode,
@@ -26,7 +27,7 @@ class JsxEmitter {
   public body(component: IJsxComponent, identifierOf: (child: IJsxComponent) => string): string {
     const state = this.state(identifierOf);
     const jsx = this.node(component.root, 2, state);
-    return `${state.rawConstants.join("\n")}\n${jsx}`;
+    return `${this.paramList(component.params)}\n${state.rawConstants.join("\n")}\n${jsx}`;
   }
 
   public source(
@@ -45,21 +46,43 @@ class JsxEmitter {
     const state = this.state((child) => identifiers.get(importOf(child).path)!);
     const jsx = this.node(component.root, 2, state);
 
+    const params = component.params ?? [];
+    const usesStyle = params.some((param) => param.type === JsxParamType.Style);
+    const reactImports = [
+      ...(state.usesSuspense ? ["Suspense"] : []),
+      ...(usesStyle ? ["type CSSProperties"] : []),
+    ];
     const imports: string[] = [];
-    if (state.usesSuspense) imports.push('import { Suspense } from "react";');
+    if (reactImports.length) imports.push(`import { ${reactImports.join(", ")} } from "react";`);
     if (state.usesRaw) imports.push(`import RawHtml from "${rawHtmlImport}";`);
     for (const [path, identifier] of [...identifiers].sort(([a], [b]) => a.localeCompare(b))) {
       imports.push(`import ${identifier} from "${path}";`);
     }
 
     const constants = state.rawConstants.length ? `\n${state.rawConstants.join("\n")}\n` : "";
-    return `${imports.join("\n")}${imports.length ? "\n" : ""}${constants}
-export default function ${name}() {
+    const propsType = params.length ? this.propsInterface(name, params) : "";
+    const signature = params.length ? `{ ${params.map((param) => param.name).join(", ")} }: ${name}Props` : "";
+    return `${imports.join("\n")}${imports.length ? "\n" : ""}${constants}${propsType}
+export default function ${name}(${signature}) {
   return (
 ${jsx}
   );
 }
 `;
+  }
+
+  // interface FooterProps { className?: string; }
+  private propsInterface(name: string, params: IJsxComponentParam[]): string {
+    const fields = params.map(
+      (param) => `  ${param.name}${param.optional ? "?" : ""}: ${param.type === JsxParamType.Style ? "CSSProperties" : "string"};`,
+    );
+    return `\ninterface ${name}Props {\n${fields.join("\n")}\n}\n`;
+  }
+
+  // The params as part of a component's body, so components that take
+  // different props never count as identical.
+  private paramList(params: IJsxComponentParam[] | undefined): string {
+    return (params ?? []).map((param) => `${param.name}${param.optional ? "?" : ""}:${param.type}`).join(",");
   }
 
   // Import path -> identifier, avoiding the component's own name, Suspense
@@ -85,12 +108,14 @@ ${jsx}
     const pad = INDENT.repeat(depth);
     switch (node.kind) {
       case JsxNodeKind.Text:
-        return `${pad}${PLAIN_TEXT.test(node.text) && node.text === node.text.trim() && node.text ? node.text : `{${JSON.stringify(node.text)}}`}`;
+        return `${pad}${PLAIN_TEXT.test(node.text) && node.text === node.text.trim() && node.text ? this.escapeText(node.text) : `{${JSON.stringify(node.text)}}`}`;
       case JsxNodeKind.Raw:
         return `${pad}<RawHtml html={${this.rawConstant(node.html, state)}} />`;
-      case JsxNodeKind.Component:
+      case JsxNodeKind.Component: {
         state.children.add(node.component);
-        return `${pad}<${state.identifierOf(node.component)} />`;
+        const props = this.props(node.props ?? []);
+        return `${pad}<${state.identifierOf(node.component)}${props.length ? ` ${props.join(" ")}` : ""} />`;
+      }
       case JsxNodeKind.Suspense: {
         state.usesSuspense = true;
         if (node.children.length === 0) return `${pad}<Suspense fallback={null} />`;
@@ -128,7 +153,7 @@ ${jsx}
     let result = "";
     for (const node of nodes) {
       if (node.kind === JsxNodeKind.Text) {
-        result += PLAIN_TEXT.test(node.text) ? node.text : `{${JSON.stringify(node.text)}}`;
+        result += PLAIN_TEXT.test(node.text) ? this.escapeText(node.text) : `{${JSON.stringify(node.text)}}`;
       } else if (node.kind === JsxNodeKind.Element && settings.inlineTags.includes(node.tag.toLowerCase())) {
         const props = this.props(node.props);
         const opening = `<${node.tag}${props.length ? ` ${props.join(" ")}` : ""}`;
@@ -144,6 +169,12 @@ ${jsx}
       }
     }
     return result;
+  }
+
+  // Quotes as entities in JSX text, as react/no-unescaped-entities asks;
+  // JSX decodes them back, so the text renders unchanged.
+  private escapeText(text: string): string {
+    return text.replaceAll("'", "&apos;").replaceAll('"', "&quot;");
   }
 
   private props(props: IJsxProp[]): string[] {
@@ -162,6 +193,10 @@ ${jsx}
         else if (isNumber) written.push(`${name}={${value}}`);
         else if (PLAIN_ATTRIBUTE.test(value)) written.push(`${name}="${value}"`);
         else written.push(`${name}={${JSON.stringify(value)}}`);
+        continue;
+      }
+      if ("param" in value) {
+        written.push(`${name}={${value.param}}`);
         continue;
       }
       if ("style" in value) {

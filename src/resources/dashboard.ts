@@ -4,7 +4,7 @@ import { DropdownOption } from "@/types/shared";
 import { ConversionStatus, MenuItemVariant, SiteAction, SiteFilter } from "@/utils/enum";
 
 export const conversionStatusLabels: Record<ConversionStatus, string> = {
-  [ConversionStatus.Queued]: "Waiting for a free slot…",
+  [ConversionStatus.Queued]: "Understanding and learning the page structure…",
   [ConversionStatus.Capturing]: "Capturing every page, breakpoint and asset…",
   [ConversionStatus.Storing]: "Saving your Next.js project…",
   [ConversionStatus.Ready]: "Done. Opening your preview…",
