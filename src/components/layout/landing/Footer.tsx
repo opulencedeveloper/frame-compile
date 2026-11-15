@@ -11,7 +11,6 @@ export default function Footer() {
         src={FooterBg}
         alt=""
         sizes="100vw"
-        preload={true}
         className="w-full h-auto"
       />
 
@@ -23,7 +22,7 @@ export default function Footer() {
 
       <div className="border-t border-cf4f4f6 mt-8 pt-8 pb-12.5">
         <p className="text-c767676 text-center font-nunito-400 text-sm">
-          © <CurrentYear /> CovertoCode. Independent build tool for web creators and
+          © <CurrentYear /> FrameCompile. Independent build tool for web creators and
           engineers. Not affiliated with Framer B.V.
         </p>
       </div>

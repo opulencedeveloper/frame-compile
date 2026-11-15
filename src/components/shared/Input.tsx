@@ -32,7 +32,7 @@ export default function Input({
         onClick={suffixIcon.onClick}
         disabled={disabled}
         aria-label={suffixIcon.alt}
-        className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50"
+        className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <SmartImage
           src={suffixIcon.src}

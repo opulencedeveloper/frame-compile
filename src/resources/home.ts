@@ -32,7 +32,7 @@ export const howItWorksSteps: HowItWorksStep[] = [
   {
     title: "URL Based Conversion",
     description:
-      "No plugins required. Drop in your live Framer link and get production-ready Next.js code in seconds.",
+      "No plugins required. Drop in your live Framer link and get production-ready Next.js code in minutes.",
     image: UrlBasedConversionImage,
   },
   {

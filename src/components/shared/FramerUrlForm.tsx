@@ -72,7 +72,7 @@ export default function FramerUrlForm({
 
       <AuthFormError message={error} />
 
-      <p className="px-4 py-0.75 bg-cf7f6f5 rounded-[5px] text-c767676 text-sm w-max max-w-full mx-auto truncate">
+      <p className="px-4 py-0.75 bg-cf7f6f5 rounded-[5px] text-c63636d text-sm w-max max-w-full mx-auto truncate">
         https://<span>{site}</span>
       </p>
     </>

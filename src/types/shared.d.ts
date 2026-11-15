@@ -101,6 +101,9 @@ export interface CheckboxProps extends Omit<ComponentProps<"input">, "type"> {
 
 export interface SectionLabelProps {
   title: string;
+  // "h2" when the label is the section's only title; otherwise it sits
+  // above the section's own heading as plain text.
+  as?: "p" | "h2";
 }
 
 export interface BackLinkProps {

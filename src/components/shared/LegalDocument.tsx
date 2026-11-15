@@ -54,7 +54,7 @@ export default function LegalDocument({ content }: LegalDocumentProps) {
               {content.title}
             </h1>
             <p className="mt-4 text-sm md:text-base font-nunito-400">
-              <span className="text-c8a8a8a">{legalContent.lastUpdated}</span>{" "}
+              <span className="text-c767676">{legalContent.lastUpdated}</span>{" "}
               <time className="text-c292929">{content.lastUpdated}</time>
             </p>
             <p className="mt-5 text-c292929 font-nunito-400 text-sm md:text-base leading-relaxed">

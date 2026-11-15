@@ -4,11 +4,10 @@ import QuestionMark from "@/assets/icons/question-mark.svg";
 
 export default function FloatingActionButton() {
   return (
-    <Button className="rounded-full w-11.75 h-11 fixed right-5 bottom-7">
+    <Button aria-label="Help" className="rounded-full w-11.75 h-11 fixed right-5 bottom-7">
       <SmartImage
-        preload={true}
         src={QuestionMark}
-        alt="question"
+        alt=""
         className="h-3.75 w-3.75"
         width={15}
         height={15}

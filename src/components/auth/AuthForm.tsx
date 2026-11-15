@@ -133,9 +133,9 @@ export default function AuthForm({ mode, onVerificationRequired }: AuthFormProps
         <h1 className="leading-[33.48px] text-c0a0a0a font-hedvig-400-18 text-[24px] md:text-[28px] mt-3.25">
           {content.title}
         </h1>
-        <h2 className="text-sm text-c63636d font-nunito-400 mt-2.5 mb-6.25">
+        <p className="text-sm text-c63636d font-nunito-400 mt-2.5 mb-6.25">
           {content.description}
-        </h2>
+        </p>
         <Suspense fallback={null}>
           <AuthErrorMessage />
         </Suspense>
