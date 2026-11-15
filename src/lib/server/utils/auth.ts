@@ -152,17 +152,34 @@ class Auth {
     return this.dummyHash;
   }
 
-  private scrypt(
+  // Hashes running now, and those waiting for a free slot.
+  private activeHashes = 0;
+  private readonly waitingHashes: (() => void)[] = [];
+
+  // At most config.security.maxConcurrentHashes at once: each takes 32 MiB,
+  // so an unbounded burst of logins could exhaust the server's memory.
+  private async scrypt(
     password: string,
     salt: Buffer,
     keyLength: number,
     { N, r, p }: ScryptParams = config.password.scrypt,
   ) {
+    // A finished hash hands its slot straight to the next waiting one.
+    if (this.activeHashes >= config.security.maxConcurrentHashes) {
+      await new Promise<void>((resolve) => this.waitingHashes.push(resolve));
+    } else {
+      this.activeHashes += 1;
+    }
+
     const { maxmem } = config.password.scrypt;
     return new Promise<Buffer>((resolve, reject) => {
       crypto.scrypt(password, salt, keyLength, { N, r, p, maxmem }, (error, key) =>
         error ? reject(error) : resolve(key),
       );
+    }).finally(() => {
+      const next = this.waitingHashes.shift();
+      if (next) next();
+      else this.activeHashes -= 1;
     });
   }
 }

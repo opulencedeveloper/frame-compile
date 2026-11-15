@@ -58,3 +58,14 @@ export enum AuthErrorCode {
   GoogleAccountConflict = "google_account_conflict",
   GoogleAccountNotFound = "google_account_not_found",
 }
+
+// Request limits (see config.security.rateLimits), one per action.
+export enum RateLimitBucket {
+  Login = "login",
+  LoginAccount = "loginAccount",
+  Register = "register",
+  ResendOtp = "resendOtp",
+  VerifyEmail = "verifyEmail",
+  CreateConversion = "createConversion",
+  ConnectVercel = "connectVercel",
+}

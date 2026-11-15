@@ -43,6 +43,15 @@ export type SessionCheck =
   | { valid: true; value: SessionPayload }
   | { valid: false; response: NextResponse };
 
+// Same shape as a session or validation check: a 429 response to return
+// once the limit is used up.
+export type RateLimitCheck = { valid: true } | { valid: false; response: NextResponse };
+
+export interface RateLimitWindow {
+  count: number;
+  resetAt: number;
+}
+
 // Stored in a short-lived httpOnly cookie between the redirect to Google and
 // the callback, so the callback can prove it answers a request we started.
 export interface GoogleOAuthState {

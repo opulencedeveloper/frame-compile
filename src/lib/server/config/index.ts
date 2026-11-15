@@ -73,6 +73,38 @@ const config = {
     // Mail clients POST here directly for one-click unsubscribe (RFC 8058).
     unsubscribeApiPath: "/api/v1/marketing/unsubscribe",
   },
+  security: {
+    // Requests allowed per window: by client address, or by account where
+    // the bucket says so. Kept in memory, per server.
+    rateLimits: {
+      login: { limit: 10, windowMs: 15 * 60_000 },
+      loginAccount: { limit: 10, windowMs: 15 * 60_000 },
+      register: { limit: 5, windowMs: 60 * 60_000 },
+      resendOtp: { limit: 10, windowMs: 60 * 60_000 },
+      verifyEmail: { limit: 20, windowMs: 15 * 60_000 },
+      createConversion: { limit: 20, windowMs: 60 * 60_000 },
+      connectVercel: { limit: 10, windowMs: 15 * 60_000 },
+    },
+    // Oldest entries are dropped beyond this, so memory stays bounded.
+    maxTrackedKeys: 50_000,
+    // Each password hash takes 32 MiB (see password.scrypt); more at once
+    // wait their turn, so a burst of logins can't exhaust memory.
+    maxConcurrentHashes: 4,
+    // Sent with every page and API response on the app's own host (never
+    // on preview hosts, which set their own).
+    headers: {
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    } as Record<string, string>,
+    // Over HTTPS only: browsers then refuse plain HTTP for two years.
+    hsts: "max-age=63072000; includeSubDomains",
+    // Cross-site writes are refused (see src/proxy.ts), except here: mail
+    // providers' servers post one-click unsubscribes (RFC 8058).
+    crossSiteWritePaths: ["/api/v1/marketing/unsubscribe"],
+  },
   outboundFetch: {
     // Sent with every request we make to a site being converted.
     userAgent: "Mozilla/5.0 (compatible; FrameCompileBot/1.0)",

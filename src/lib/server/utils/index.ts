@@ -88,11 +88,15 @@ class Utils {
 
   // Only same-origin relative paths: blocks open redirects such as
   // "//evil.com" or "/\evil.com", which browsers treat as absolute URLs.
+  // The path is resolved the way a browser resolves it (which drops tabs and
+  // newlines, so "/\t/evil.com" means "//evil.com") and kept only if it
+  // stays on this site.
   public getSafeRedirectPath(path: string | null | undefined, fallback = "/") {
-    if (!path || !path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\")) {
-      return fallback;
-    }
-    return path;
+    if (!path || !path.startsWith("/") || /[\u0000-\u001F\u007F\\]/.test(path)) return fallback;
+    const base = new URL("https://app.invalid");
+    const resolved = new URL(path, base);
+    if (resolved.origin !== base.origin) return fallback;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
   }
 }
 
