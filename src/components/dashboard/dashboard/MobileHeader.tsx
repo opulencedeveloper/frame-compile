@@ -60,7 +60,9 @@ export default function MobileHeader({ children }: MobileHeaderProps) {
               id={drawerId}
               aria-label="Workspace"
               onClick={(event) => {
-                if (event.target instanceof Element && event.target.closest("button, a")) setIsOpen(false);
+                if (!(event.target instanceof Element) || !event.currentTarget.contains(event.target)) return;
+                if (event.target.closest("[data-keep-drawer-open]")) return;
+                if (event.target.closest("button, a")) setIsOpen(false);
               }}
               initial={shouldReduceMotion ? { opacity: 0 } : { x: "-100%" }}
               animate={shouldReduceMotion ? { opacity: 1 } : { x: 0 }}

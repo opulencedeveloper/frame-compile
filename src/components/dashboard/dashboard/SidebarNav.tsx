@@ -5,6 +5,7 @@ import AppLogo from "@/components/shared/AppLogo";
 import { DASHBOARD_ROUTE } from "@/constants/auth";
 import Button from "@/components/shared/Button";
 import Shimmer from "@/components/shared/Shimmer";
+import LogoutButton from "@/components/dashboard/dashboard/LogoutButton";
 import { cn } from "@/lib/utils";
 import { sidebarFilterItems } from "@/resources/dashboard";
 import { AppDispatch, RootState } from "@/store/redux";
@@ -48,6 +49,7 @@ export function SidebarNav() {
           })}
         </div>
       </div>
+      <LogoutButton className="mt-6 px-2.5 min-[1088px]:hidden" />
     </>
   );
 }
