@@ -21,6 +21,7 @@
     "joi": "^18.3.1",
     "jose": "^6.2.13",
     "js-cookie": "^3.0.8",
+    "mailchecker": "6.0.21",
     "mongoose": "^9.11.4",
     "next": "^16.4.3",
     "playwright-core": "1.64.1",

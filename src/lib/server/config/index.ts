@@ -104,6 +104,9 @@ const config = {
     // Cross-site writes are refused (see src/proxy.ts), except here: mail
     // providers' servers post one-click unsubscribes (RFC 8058).
     crossSiteWritePaths: ["/api/v1/marketing/unsubscribe"],
+    // Throwaway inbox domains refused at sign-up, on top of mailchecker's
+    // list (about 55,000). Add any it misses, e.g. "new-temp-mail.example".
+    extraDisposableDomains: [] as string[],
   },
   outboundFetch: {
     // Sent with every request we make to a site being converted.

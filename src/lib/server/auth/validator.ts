@@ -1,4 +1,5 @@
 import Joi from "joi";
+import MailChecker from "mailchecker";
 import config from "../config";
 import { BaseValidator } from "../utils/validator";
 import { AuthPage } from "../utils/enum";
@@ -11,6 +12,11 @@ import {
   IResendOtpInput,
   IVerifyEmailInput,
 } from "./interface";
+
+// Our own additions to the throwaway-domain list (see config).
+if (config.security.extraDisposableDomains.length) {
+  MailChecker.addCustomDomains(config.security.extraDisposableDomains);
+}
 
 class AuthValidator extends BaseValidator {
   private authPageField = Joi.string().valid(...Object.values(AuthPage));
@@ -61,12 +67,22 @@ class AuthValidator extends BaseValidator {
     "any.required": "Email is required",
   });
 
+  // For new accounts: no throwaway inboxes (mailinator, 10minutemail...),
+  // which would let one person open endless free accounts and hurt how
+  // reliably our emails are delivered. Existing accounts can still sign in.
+  private permanentEmailField = this.emailField
+    .custom((email: string, helpers) => (MailChecker.isValid(email) ? email : helpers.error("email.disposable")))
+    .messages({
+      "email.disposable":
+        "Please use a permanent email address. Temporary inboxes can't receive important account emails.",
+    });
+
   // Where to go after signing in; the controller still checks it is a
   // same-site path.
   private redirectToField = Joi.string().max(2048).optional();
 
   private registerSchema = Joi.object<IRegisterInput>({
-    email: this.emailField,
+    email: this.permanentEmailField,
     password: Joi.string()
       .min(config.password.minLength)
       .max(config.password.maxLength)
