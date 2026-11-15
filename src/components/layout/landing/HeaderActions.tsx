@@ -4,15 +4,15 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { auth } from "@/lib/server/utils/auth";
 import { CookieNames } from "@/lib/server/utils/enum";
-import { DASHBOARD_ROUTE } from "@/constants/auth";
+import { DASHBOARD_ROUTE, SIGN_IN_ROUTE, SIGN_UP_ROUTE } from "@/constants/auth";
 import { headerButtonClassName, headerLinkClassName } from "./headerStyles";
 
 const signedOutActions = (
   <>
-    <Link href="/sign-in" className={headerLinkClassName}>
+    <Link href={SIGN_IN_ROUTE} className={headerLinkClassName}>
       Sign In
     </Link>
-    <Link href="/" className={headerButtonClassName}>
+    <Link href={SIGN_UP_ROUTE} className={headerButtonClassName}>
       Convert Next.js
     </Link>
   </>

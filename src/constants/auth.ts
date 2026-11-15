@@ -12,6 +12,8 @@ export const DASHBOARD_ROUTE = "/dashboard";
 
 export const SIGN_IN_ROUTE = "/sign-in";
 
+export const SIGN_UP_ROUTE = "/sign-up";
+
 export const AUTH_ROUTES = {
   GOOGLE: "/api/v1/auth/google",
 } as const;
