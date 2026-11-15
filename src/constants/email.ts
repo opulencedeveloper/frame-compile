@@ -1,0 +1,66 @@
+// The providers a mistyped domain is most likely meant to be ("gmial.com"
+// -> "gmail.com").
+export const EMAIL_TYPO_TARGETS = [
+  "gmail.com",
+  "yahoo.com",
+  "hotmail.com",
+  "outlook.com",
+  "live.com",
+  "icloud.com",
+  "aol.com",
+  "protonmail.com",
+  "proton.me",
+  "gmx.com",
+  "zoho.com",
+  "yandex.com",
+] as const;
+
+// Real providers that are only a letter or two from one above, so they are
+// never "corrected" (mail.com and ymail.com are one letter from gmail.com).
+export const EMAIL_REAL_LOOKALIKES = [
+  "mail.com",
+  "email.com",
+  "ymail.com",
+  "gmail.co.uk",
+  "googlemail.com",
+  "rocketmail.com",
+  "me.com",
+  "mac.com",
+  "msn.com",
+  "gmx.de",
+  "gmx.net",
+  "gmx.at",
+  "gmx.ch",
+  "yahoo.co.uk",
+  "yahoo.fr",
+  "yahoo.de",
+  "yahoo.es",
+  "yahoo.it",
+  "yahoo.ca",
+  "yahoo.in",
+  "hotmail.co.uk",
+  "hotmail.fr",
+  "hotmail.de",
+  "hotmail.es",
+  "hotmail.it",
+  "outlook.fr",
+  "outlook.de",
+  "outlook.es",
+  "outlook.it",
+  "live.co.uk",
+  "live.fr",
+  "live.de",
+  "live.nl",
+  "aim.com",
+  "web.de",
+  "qq.com",
+  "126.com",
+  "163.com",
+  "yandex.ru",
+  "ya.ru",
+  "zohomail.com",
+  "pm.me",
+] as const;
+
+// A domain this many edits or fewer from a provider is taken as a typo.
+export const EMAIL_TYPO_MAX_DISTANCE = 2;

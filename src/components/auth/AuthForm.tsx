@@ -19,11 +19,13 @@ import { AUTH_API, AUTH_RULES } from "@/constants/auth";
 import { LEGAL_ROUTES } from "@/constants/legal";
 import {
   authFormContent,
+  emailSuggestionContent,
   marketingOptInLabel,
   termsRequiredMessage,
 } from "@/resources/auth";
 import { AuthFormProps, PendingVerification } from "@/types/auth";
 import { clearRedirectAfterLogin, getRedirectAfterLogin } from "@/utils/auth";
+import { suggestEmail } from "@/utils/email";
 import { AuthMode, MessageResponse } from "@/utils/enum";
 
 const inputClassName =
@@ -37,6 +39,8 @@ export default function AuthForm({ mode, onVerificationRequired }: AuthFormProps
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const termsCheckboxRef = useRef<HTMLInputElement>(null);
@@ -154,19 +158,41 @@ export default function AuthForm({ mode, onVerificationRequired }: AuthFormProps
 
         <div className="flex flex-col gap-3.5">
           <Input
+            ref={emailRef}
             type="email"
             name="email"
             autoComplete="email"
             placeholder="you@example.com"
             aria-label="Email"
+            aria-describedby={emailSuggestion ? "email-suggestion" : undefined}
             required
             className={inputClassName}
             onChange={(event) => {
               const isValid = AUTH_RULES.EMAIL_PATTERN.test(event.target.value.trim());
               setIsEmailValid(isValid);
+              setEmailSuggestion(null);
               if (isValid) setValidationError(null);
             }}
+            onBlur={(event) => setEmailSuggestion(suggestEmail(event.target.value))}
           />
+          {emailSuggestion && (
+            <p id="email-suggestion" aria-live="polite" className="-mt-1.5 text-sm font-nunito-400 text-c63636d">
+              {emailSuggestionContent.prefix}{" "}
+              <button
+                type="button"
+                className="font-nunito-500 text-c6155f5 underline underline-offset-2"
+                onClick={() => {
+                  if (emailRef.current) emailRef.current.value = emailSuggestion;
+                  setIsEmailValid(AUTH_RULES.EMAIL_PATTERN.test(emailSuggestion));
+                  setEmailSuggestion(null);
+                  emailRef.current?.focus();
+                }}
+              >
+                {emailSuggestion}
+              </button>
+              {emailSuggestionContent.suffix}
+            </p>
+          )}
           {/* Hidden rather than unmounted, so a password typed before the
               user goes back to fix the email isn't lost. */}
           <div hidden={!showPasswordFields} className="flex flex-col gap-3.5">

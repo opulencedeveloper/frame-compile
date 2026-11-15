@@ -25,6 +25,11 @@ export const authErrorMessages: Record<AuthErrorCode, string> = {
 export const termsRequiredMessage =
   "Please accept the Terms of Service and Privacy Policy to continue";
 
+export const emailSuggestionContent = {
+  prefix: "Did you mean",
+  suffix: "?",
+};
+
 export const marketingOptInLabel =
   "Send me product updates and offers. Unsubscribe anytime.";
 
