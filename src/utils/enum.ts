@@ -17,6 +17,7 @@ export enum AuthErrorCode {
   GoogleEmailUnverified = "google_email_unverified",
   GoogleAccountConflict = "google_account_conflict",
   GoogleAccountNotFound = "google_account_not_found",
+  GoogleSignUpRequired = "google_sign_up_required",
 }
 
 export enum MenuItemVariant {

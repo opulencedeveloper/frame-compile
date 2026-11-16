@@ -20,6 +20,8 @@ export const authErrorMessages: Record<AuthErrorCode, string> = {
     "This email is linked to a different Google account. Sign in with that account instead.",
   [AuthErrorCode.GoogleAccountNotFound]:
     "No account found for this Google account. Sign up to create one.",
+  [AuthErrorCode.GoogleSignUpRequired]:
+    "Almost there: accept the terms below, then continue with Google to create your account.",
 };
 
 export const termsRequiredMessage =

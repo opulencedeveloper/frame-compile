@@ -24,6 +24,7 @@ export const AUTH_API = {
   LOGIN: "/auth/login",
   VERIFY_EMAIL: "/auth/verify-email",
   RESEND_OTP: "/auth/resend-otp",
+  GOOGLE_ONE_TAP: "/auth/google/one-tap",
   LOGOUT: "/auth/logout",
 } as const;
 
@@ -42,4 +43,9 @@ export const AUTH_QUERY_KEYS = {
   AUTH_PAGE: "authPage",
   ACCEPT_TERMS: "acceptTerms",
   MARKETING_OPT_IN: "marketingOptIn",
+  // The Google account to pre-select, e.g. after Google One Tap.
+  LOGIN_HINT: "loginHint",
 } as const;
+
+// Google Identity Services, which shows the One Tap prompt.
+export const GOOGLE_IDENTITY_SCRIPT = "https://accounts.google.com/gsi/client";

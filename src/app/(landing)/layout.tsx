@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import GoogleOneTapGate from "@/components/auth/GoogleOneTapGate";
 import Footer from "@/components/layout/landing/Footer";
 import Header from "@/components/layout/landing/Header";
 import HeaderActions from "@/components/layout/landing/HeaderActions";
@@ -12,6 +14,9 @@ export default function LandingLayout({
       <Header actions={<HeaderActions />} />
       {children}
       <Footer />
+      <Suspense fallback={null}>
+        <GoogleOneTapGate />
+      </Suspense>
     </main>
   );
 }

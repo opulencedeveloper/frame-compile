@@ -5,6 +5,13 @@ export interface IGoogleAuthStartQuery {
   authPage?: AuthPage;
   acceptTerms?: boolean;
   marketingOptIn?: boolean;
+  // The Google account to pre-select (e.g. the one used with One Tap).
+  loginHint?: string;
+}
+
+// What Google One Tap hands the page: a signed ID token.
+export interface IGoogleOneTapInput {
+  credential: string;
 }
 
 export interface IGoogleAuthCallbackQuery {

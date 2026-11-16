@@ -8,9 +8,10 @@ import MoreHortz from "@/assets/icons/more-hortz.svg";
 import { conversionListContent, conversionStatusLabels, siteActionItems } from "@/resources/dashboard";
 import { ContentCardProps } from "@/types/conversion";
 import { isConversionInProgress, timeAgo } from "@/utils/conversion";
+import { EAGER_THUMBNAILS } from "@/constants/conversion";
 import { ConversionStatus, SiteAction } from "@/utils/enum";
 
-export default function ContentCard({ conversion, onDelete }: ContentCardProps) {
+export default function ContentCard({ conversion, onDelete, index }: ContentCardProps) {
   const router = useRouter();
   const href = `/${conversion.id}`;
   const isFailed = conversion.status === ConversionStatus.Failed;
@@ -34,6 +35,8 @@ export default function ContentCard({ conversion, onDelete }: ContentCardProps) 
             fill
             unoptimized
             useSkeleton
+            preload={index < EAGER_THUMBNAILS}
+            fetchPriority={index === 0 ? "high" : undefined}
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="object-cover object-top"
           />

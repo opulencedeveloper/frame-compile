@@ -7,6 +7,7 @@ import { GoogleOAuthState } from "../utils/interface";
 import {
   IGoogleAuthCallbackQuery,
   IGoogleAuthStartQuery,
+  IGoogleOneTapInput,
   ILoginInput,
   IRegisterInput,
   IResendOtpInput,
@@ -41,6 +42,12 @@ class AuthValidator extends BaseValidator {
       then: Joi.boolean().default(false),
       otherwise: Joi.forbidden(),
     }),
+    loginHint: Joi.string().trim().lowercase().email().max(254).optional(),
+  });
+
+  // A Google ID token (a JWT, about 1-2 KB); verified by the controller.
+  private googleOneTapSchema = Joi.object<IGoogleOneTapInput>({
+    credential: Joi.string().max(8192).required(),
   });
 
   private googleAuthCallbackSchema = Joi.object<IGoogleAuthCallbackQuery>({
@@ -136,6 +143,10 @@ class AuthValidator extends BaseValidator {
 
   validateGoogleAuthStart(data: unknown) {
     return this.validate(this.googleAuthStartSchema, data);
+  }
+
+  validateGoogleOneTap(data: unknown) {
+    return this.validate(this.googleOneTapSchema, data);
   }
 
   validateGoogleAuthCallback(data: unknown) {

@@ -21,6 +21,9 @@ function getGoogleAuthUrl(mode: AuthMode, marketingOptIn: boolean) {
     query.set(AUTH_QUERY_KEYS.MARKETING_OPT_IN, String(marketingOptIn));
   }
 
+  const loginHint = new URLSearchParams(window.location.search).get(AUTH_QUERY_KEYS.LOGIN_HINT);
+  if (loginHint) query.set(AUTH_QUERY_KEYS.LOGIN_HINT, loginHint);
+
   const redirectTo = getRedirectAfterLogin();
   if (redirectTo) {
     query.set(AUTH_QUERY_KEYS.REDIRECT_TO, redirectTo);

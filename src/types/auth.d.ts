@@ -51,3 +51,9 @@ export interface AuthFormContent {
   switchLinkText: string;
   switchLinkHref: string;
 }
+
+// GET /auth/google/one-tap: what the One Tap prompt is shown with.
+export interface GoogleOneTapSession {
+  clientId: string;
+  nonce: string;
+}

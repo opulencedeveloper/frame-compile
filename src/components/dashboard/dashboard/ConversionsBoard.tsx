@@ -71,8 +71,8 @@ export default function ConversionsBoard() {
           </div>
         ) : conversions.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 content-start gap-x-5 gap-y-6 md:gap-y-8">
-            {conversions.map((conversion) => (
-              <ContentCard key={conversion.id} conversion={conversion} onDelete={setDeleting} />
+            {conversions.map((conversion, index) => (
+              <ContentCard key={conversion.id} conversion={conversion} onDelete={setDeleting} index={index} />
             ))}
           </div>
         ) : (

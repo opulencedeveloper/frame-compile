@@ -27,7 +27,14 @@ class GoogleOAuth {
     };
   }
 
-  public getAuthorizationUrl({ state, nonce, codeVerifier }: GoogleOAuthState) {
+  // For a Google One Tap credential to carry, proving it answers a prompt
+  // this app showed.
+  public createNonce() {
+    return this.randomToken();
+  }
+
+  // `loginHint` pre-selects that Google account on Google's screen.
+  public getAuthorizationUrl({ state, nonce, codeVerifier }: GoogleOAuthState, loginHint?: string) {
     const codeChallenge = crypto
       .createHash("sha256")
       .update(codeVerifier)
@@ -44,6 +51,7 @@ class GoogleOAuth {
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
       prompt: "select_account",
+      ...(loginHint && { login_hint: loginHint }),
     }).toString();
 
     return url.toString();
@@ -84,6 +92,12 @@ class GoogleOAuth {
       throw new Error("Google token response did not include an id_token");
     }
 
+    return this.verifyIdToken(idToken, nonce);
+  }
+
+  // A Google ID token's profile, after checking its signature, issuer,
+  // audience, expiry and nonce. Both the redirect flow and One Tap use it.
+  public async verifyIdToken(idToken: string, nonce: string): Promise<GoogleProfile> {
     const { payload } = await jwtVerify(idToken, this.jwks, {
       issuer: config.google.issuers,
       audience: config.google.clientId,

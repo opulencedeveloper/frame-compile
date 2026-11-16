@@ -81,6 +81,8 @@ export interface ConversionProgressProps {
 export interface ContentCardProps {
   conversion: Conversion;
   onDelete: (conversion: Conversion) => void;
+  // Its place in the list: the first row's thumbnails load right away.
+  index: number;
 }
 
 export interface DeleteConversionModalProps {

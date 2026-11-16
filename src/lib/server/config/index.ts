@@ -84,6 +84,7 @@ const config = {
       verifyEmail: { limit: 20, windowMs: 15 * 60_000 },
       createConversion: { limit: 20, windowMs: 60 * 60_000 },
       connectVercel: { limit: 10, windowMs: 15 * 60_000 },
+      googleOneTap: { limit: 20, windowMs: 15 * 60_000 },
     },
     // Oldest entries are dropped beyond this, so memory stays bounded.
     maxTrackedKeys: 50_000,
@@ -320,6 +321,9 @@ const config = {
     // Scoped to the Google auth routes so the state cookie is never sent elsewhere.
     cookiePath: "/api/v1/auth/google",
     stateExpiresInSeconds: 60 * 10, // 10 minutes to finish the consent screen
+    // Google One Tap: the nonce its credential must carry lives this long,
+    // in a cookie under cookiePath.
+    oneTapNonceExpiresInSeconds: 60 * 10,
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     jwksUrl: "https://www.googleapis.com/oauth2/v3/certs",

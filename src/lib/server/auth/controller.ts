@@ -20,6 +20,7 @@ import { authValidator } from "./validator";
 import {
   IGoogleAuthCallbackQuery,
   IGoogleAuthStartQuery,
+  IGoogleOneTapInput,
   ILoginInput,
   IRegisterInput,
   IResendOtpInput,
@@ -31,6 +32,7 @@ class AuthController {
     redirectTo,
     authPage = AuthPage.SignIn,
     marketingOptIn = false,
+    loginHint,
   }: IGoogleAuthStartQuery) {
     const oauthState = googleOAuth.createState(
       utils.getSafeRedirectPath(redirectTo, config.app.afterLoginPath),
@@ -38,7 +40,7 @@ class AuthController {
       marketingOptIn,
     );
     const response = NextResponse.redirect(
-      googleOAuth.getAuthorizationUrl(oauthState),
+      googleOAuth.getAuthorizationUrl(oauthState, loginHint),
     );
 
     response.cookies.set(
@@ -54,6 +56,66 @@ class AuthController {
       },
     );
 
+    return response;
+  }
+
+  // Google One Tap, step 1: the client ID to show the prompt with, and a
+  // one-time nonce the credential must carry, kept in a short-lived cookie
+  // so a credential captured elsewhere can't be replayed here.
+  public googleOneTapStart() {
+    const nonce = googleOAuth.createNonce();
+    const response = utils.customResponse({
+      status: 200,
+      message: MessageResponse.Success,
+      description: "Google One Tap ready.",
+      data: { clientId: config.google.clientId, nonce },
+    });
+    response.cookies.set(CookieNames.GoogleOneTapNonce, nonce, {
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: "lax",
+      path: config.google.cookiePath,
+      maxAge: config.google.oneTapNonceExpiresInSeconds,
+    });
+    return response;
+  }
+
+  // Google One Tap, step 2: the credential Google gave the page. An existing
+  // account is signed in; someone new is sent to sign-up, since accounts are
+  // only created with the terms accepted.
+  public async googleOneTap({ credential }: IGoogleOneTapInput, nonce: string | undefined) {
+    const profile = nonce ? await googleOAuth.verifyIdToken(credential, nonce).catch(() => null) : null;
+    if (!profile) {
+      return this.oneTapResponse(this.verificationError(401, "Google sign-in couldn't be verified. Please try again."));
+    }
+    if (!profile.emailVerified) {
+      return this.oneTapResponse(this.verificationError(400, "Your Google email isn't verified. Verify it with Google, then try again."));
+    }
+
+    const lookup = await userService.findGoogleUser(profile);
+    if (lookup.status === GoogleUserStatus.Conflict) {
+      return this.oneTapResponse(
+        this.verificationError(409, "This email is linked to a different Google account. Sign in with that account instead."),
+      );
+    }
+    if (lookup.status === GoogleUserStatus.Found) {
+      return this.oneTapResponse(await this.sessionResponse(lookup.user.id, undefined, "Signed in."));
+    }
+
+    const signUp = new URLSearchParams({ error: AuthErrorCode.GoogleSignUpRequired, loginHint: profile.email });
+    return this.oneTapResponse(
+      utils.customResponse({
+        status: 200,
+        message: MessageResponse.Success,
+        description: "Accept the terms to finish creating your account.",
+        data: { redirectTo: `/${AuthPage.SignUp}?${signUp}` },
+      }),
+    );
+  }
+
+  // Every One Tap answer clears its nonce: it is single-use.
+  private oneTapResponse(response: NextResponse) {
+    response.cookies.set(CookieNames.GoogleOneTapNonce, "", { path: config.google.cookiePath, maxAge: 0 });
     return response;
   }
 

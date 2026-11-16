@@ -42,6 +42,8 @@ export enum FetchFailureReason {
 export enum CookieNames {
   UserAuthToken = "user_auth_token",
   GoogleOAuthState = "google_oauth_state",
+  // The nonce a Google One Tap credential must carry (see GoogleOneTap).
+  GoogleOneTapNonce = "google_one_tap_nonce",
 }
 
 // The page a Google flow started from, so failures return there. The values
@@ -57,6 +59,9 @@ export enum AuthErrorCode {
   GoogleEmailUnverified = "google_email_unverified",
   GoogleAccountConflict = "google_account_conflict",
   GoogleAccountNotFound = "google_account_not_found",
+  // Google One Tap for someone without an account: sign-up needs the terms
+  // accepted first.
+  GoogleSignUpRequired = "google_sign_up_required",
 }
 
 // Request limits (see config.security.rateLimits), one per action.
@@ -68,4 +73,5 @@ export enum RateLimitBucket {
   VerifyEmail = "verifyEmail",
   CreateConversion = "createConversion",
   ConnectVercel = "connectVercel",
+  GoogleOneTap = "googleOneTap",
 }

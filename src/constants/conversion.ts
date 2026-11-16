@@ -21,6 +21,11 @@ export const CONVERSION_POLL_INTERVAL_MS = 2000;
 // The dashboard checks on conversions still running less often.
 export const CONVERSION_LIST_POLL_INTERVAL_MS = 5000;
 
+// The first row of cards (two columns on wide screens): their thumbnails
+// load right away instead of lazily, and the first at high priority, as it
+// is usually the largest thing on the page.
+export const EAGER_THUMBNAILS = 2;
+
 // Placeholder cards shown while the dashboard's sites load.
 export const SKELETON_CARDS = 4;
 
